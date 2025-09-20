@@ -1,0 +1,5 @@
+{
+  "name": "tikiTaP0",
+  "description": "A feature-rich web application that reimagines the classic tikiTaP0 game. It features a dynamic board, progressive difficulty, obstacles, multiple game modes including a challenging AI, and a unique reward for winners via the Gemini API.",
+  "requestFramePermissions": []
+}
