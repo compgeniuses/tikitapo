@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import * as statsService from '../services/statsService';
+import React from 'react';
 import type { Stats, GameStats } from '../types';
 import type { Theme } from '../themes';
 import { GameMode, Difficulty } from '../types';
@@ -7,7 +6,10 @@ import { GameMode, Difficulty } from '../types';
 interface PlayerStatsScreenProps {
   onBack: () => void;
   theme: Theme;
+  stats: Stats;
   onResetProgress: () => void;
+  onResetAchievements: () => void;
+  onResetStats: () => void;
 }
 
 const calculateWinRate = (stats: GameStats) => {
@@ -30,16 +32,7 @@ const StatCard: React.FC<{ title: string; stats: GameStats, theme: Theme, isTwoP
 );
 
 
-export const PlayerStatsScreen: React.FC<PlayerStatsScreenProps> = ({ onBack, theme, onResetProgress }) => {
-  const [stats, setStats] = useState<Stats>(statsService.getStats());
-
-  const handleResetStats = () => {
-    if (window.confirm("Are you sure you want to reset all your stats? This cannot be undone.")) {
-        const newStats = statsService.resetStats();
-        setStats(newStats);
-    }
-  };
-
+export const PlayerStatsScreen: React.FC<PlayerStatsScreenProps> = ({ onBack, theme, stats, onResetProgress, onResetAchievements, onResetStats }) => {
   return (
     <div className="w-full max-w-2xl bg-gray-800/50 backdrop-blur-sm p-6 md:p-8 rounded-xl shadow-2xl border border-cyan-500/20 text-white">
       <h1 className={`text-3xl md:text-4xl font-orbitron font-black text-center mb-6 bg-clip-text text-transparent bg-gradient-to-r ${theme.titleGradient}`}>
@@ -76,14 +69,17 @@ export const PlayerStatsScreen: React.FC<PlayerStatsScreenProps> = ({ onBack, th
         </div>
       </div>
 
-      <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
-        <button onClick={onBack} className="px-8 py-3 bg-gray-600 hover:bg-gray-500 rounded-md font-bold transition-transform transform hover:scale-105">
+      <div className="mt-8 flex flex-col sm:flex-row flex-wrap justify-center gap-4">
+        <button onClick={onBack} className="px-6 py-3 bg-gray-600 hover:bg-gray-500 rounded-md font-bold transition-transform transform hover:scale-105">
           Back to Menu
         </button>
-        <button onClick={onResetProgress} className="px-8 py-3 bg-orange-800 hover:bg-orange-700 rounded-md font-bold transition-transform transform hover:scale-105">
+        <button onClick={onResetProgress} className="px-6 py-3 bg-orange-800 hover:bg-orange-700 rounded-md font-bold transition-transform transform hover:scale-105">
           Reset Progress
         </button>
-        <button onClick={handleResetStats} className="px-8 py-3 bg-red-800 hover:bg-red-700 rounded-md font-bold transition-transform transform hover:scale-105">
+        <button onClick={onResetAchievements} className="px-6 py-3 bg-yellow-800 hover:bg-yellow-700 rounded-md font-bold transition-transform transform hover:scale-105">
+          Reset Achievements
+        </button>
+        <button onClick={onResetStats} className="px-6 py-3 bg-red-800 hover:bg-red-700 rounded-md font-bold transition-transform transform hover:scale-105">
           Reset Stats
         </button>
       </div>

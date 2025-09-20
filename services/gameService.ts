@@ -212,7 +212,7 @@ const findBestMoveMinimax = (board: Board, aiPlayer: Player, humanPlayer: Player
     
     // Determine search depth based on difficulty and level
     let depth = 1;
-    if (level.difficulty === Difficulty.Hard) {
+    if (level.difficulty === Difficulty.Hard) { // This is now only a fallback for Pro
         depth = 2 + Math.floor(level.level / 2); // Depth 2-3
     } else if (level.difficulty === Difficulty.Pro) {
         depth = 3 + level.level; // Depth 4-6
@@ -254,16 +254,20 @@ export const getComputerMove = (board: Board, aiPlayer: Player, humanPlayer: Pla
     
     // 3. Use appropriate logic for difficulty
     if (level.difficulty === Difficulty.Simple) {
-        // Simple AI is now smarter: win/block, then strategic (but not deep search)
-        const heuristicMove = findBestMoveByHeuristic(board, aiPlayer, humanPlayer, level.winCondition);
-        return heuristicMove || validMoves[Math.floor(Math.random() * validMoves.length)];
+        // Simple AI plays randomly after checking for wins/blocks.
+        return validMoves[Math.floor(Math.random() * validMoves.length)];
     }
     
-    // Hard and Pro use Minimax
+    if (level.difficulty === Difficulty.Hard) {
+        // Hard AI uses a 1-ply heuristic search to find the best immediate move.
+        return findBestMoveByHeuristic(board, aiPlayer, humanPlayer, level.winCondition) || validMoves[0];
+    }
+    
+    // Pro uses the deep-searching Minimax algorithm.
     return findBestMoveMinimax(board, aiPlayer, humanPlayer, level, matchScore) || validMoves[0];
 };
 
-// Simplified heuristic for basic evaluation
+// Simplified heuristic for basic evaluation (used by Hard AI)
 const findBestMoveByHeuristic = (board: Board, aiPlayer: Player, humanPlayer: Player, winCondition: number): Move | null => {
     const validMoves = getValidMoves(board);
     let bestMove: Move | null = null;

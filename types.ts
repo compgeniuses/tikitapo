@@ -23,6 +23,7 @@ export enum GameState {
   Paused = 'paused',
   GameOver = 'gameOver',
   Stats = 'stats',
+  Achievements = 'achievements',
 }
 
 export enum GameMode {
@@ -93,4 +94,10 @@ export interface Settings {
   playerNames: PlayerNames;
   lastPlayedMode: GameMode;
   lastPlayedDifficulty: Difficulty;
+}
+
+export interface Achievement {
+  id: string;
+  title: string;
+  description: string;
 }

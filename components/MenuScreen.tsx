@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { GameMode, Difficulty, Progress, Settings } from '../types';
 import type { Level } from '../types';
@@ -10,11 +9,12 @@ interface MenuScreenProps {
   onStartGame: (mode: GameMode, level: Level) => void;
   onShowStats: () => void;
   onShowSettings: () => void;
+  onShowAchievements: () => void;
   progress: Progress;
   settings: Settings;
 }
 
-export const MenuScreen: React.FC<MenuScreenProps> = ({ onStartGame, onShowStats, onShowSettings, progress, settings }) => {
+export const MenuScreen: React.FC<MenuScreenProps> = ({ onStartGame, onShowStats, onShowSettings, onShowAchievements, progress, settings }) => {
   const [mode, setMode] = useState<GameMode>(settings.lastPlayedMode);
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>(settings.lastPlayedDifficulty);
   const [twoPlayerLevel, setTwoPlayerLevel] = useState<Level>(TWO_PLAYER_LEVELS[0]);
@@ -117,16 +117,22 @@ export const MenuScreen: React.FC<MenuScreenProps> = ({ onStartGame, onShowStats
         { mode === GameMode.TwoPlayer && renderTwoPlayerSelector() }
       </div>
       
-      <div className="mt-8 grid grid-cols-2 gap-4">
+      <div className="mt-8 grid grid-cols-3 gap-2">
         <button
             onClick={onShowStats}
-            className="w-full py-3 bg-gray-700 hover:bg-purple-800 rounded-lg text-lg font-orbitron font-bold transition-all transform hover:scale-105"
+            className="w-full py-3 bg-gray-700 hover:bg-purple-800 rounded-lg text-sm font-orbitron font-bold transition-all transform hover:scale-105"
         >
-            PLAYER STATS
+            STATS
+        </button>
+        <button
+            onClick={onShowAchievements}
+            className="w-full py-3 bg-gray-700 hover:bg-yellow-800 rounded-lg text-sm font-orbitron font-bold transition-all transform hover:scale-105"
+        >
+            AWARDS
         </button>
         <button
             onClick={onShowSettings}
-            className="w-full py-3 bg-gray-700 hover:bg-cyan-800 rounded-lg text-lg font-orbitron font-bold transition-all transform hover:scale-105"
+            className="w-full py-3 bg-gray-700 hover:bg-cyan-800 rounded-lg text-sm font-orbitron font-bold transition-all transform hover:scale-105"
         >
             SETTINGS
         </button>

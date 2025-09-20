@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, GameMode, Difficulty, Player, Profile, Board, CellState, PlayerNames, Progress, Settings, MatchScore } from './types';
+import { GameState, GameMode, Difficulty, Player, Profile, Board, CellState, PlayerNames, Progress, Settings, MatchScore, Achievement, Stats } from './types';
 import type { Level, Move } from './types';
-import { LEVELS_BY_DIFFICULTY, WINS_PER_LEVEL_MATCH } from './constants';
+import { LEVELS_BY_DIFFICULTY, WINS_PER_LEVEL_MATCH, ALL_ACHIEVEMENTS } from './constants';
 import { GameBoard } from './components/GameBoard';
 import { InfoPanel } from './components/InfoPanel';
 import { MenuScreen } from './components/MenuScreen';
@@ -12,17 +12,21 @@ import { PlayerStatsScreen } from './components/PlayerStatsScreen';
 import { SettingsScreen } from './components/SettingsScreen';
 import { AIPersonality } from './components/AIPersonality';
 import { LevelStartScreen } from './components/LevelStartScreen';
+import { AchievementsScreen } from './components/AchievementsScreen';
+import { AchievementToast } from './components/AchievementToast';
 import * as gameService from './services/gameService';
 import * as audioService from './services/audioService';
 import * as geminiService from './services/geminiService';
 import * as statsService from './services/statsService';
 import * as progressService from './services/progressService';
 import * as settingsService from './services/settingsService';
+import * as achievementsService from './services/achievementsService';
 import { THEMES } from './themes';
 import type { Theme } from './themes';
 
 const App: React.FC = () => {
   const [settings, setSettings] = useState<Settings>(settingsService.getSettings());
+  const [stats, setStats] = useState<Stats>(statsService.getStats());
 
   const [gameState, setGameState] = useState<GameState>(GameState.Menu);
   const [gameMode, setGameMode] = useState<GameMode>(settings.lastPlayedMode);
@@ -54,8 +58,20 @@ const App: React.FC = () => {
   const [matchWinner, setMatchWinner] = useState<Player | null>(null);
   const [roundNumber, setRoundNumber] = useState(1);
   const [isDifficultyTransition, setIsDifficultyTransition] = useState(false);
+  
+  const [newlyUnlockedAchievement, setNewlyUnlockedAchievement] = useState<Achievement | null>(null);
 
   const moveInProgressRef = useRef(false);
+
+  const unlockAchievement = useCallback((id: string) => {
+    if (achievementsService.unlockAchievement(id)) {
+      const achievement = ALL_ACHIEVEMENTS.find(a => a.id === id);
+      if (achievement) {
+        setNewlyUnlockedAchievement(achievement);
+        audioService.playAchievementSound();
+      }
+    }
+  }, []);
 
   useEffect(() => {
     // Refresh progress from storage when returning to menu
@@ -177,13 +193,15 @@ const App: React.FC = () => {
       }
     }
   };
-
+  
   const handleGameOver = useCallback(async (gameWinner: Player | 'draw', line: Move[] = []) => {
       setWinner(gameWinner);
       setWinningLine(line);
       setGameState(GameState.GameOver);
       setAiMessage(null);
       setIsAiThinkingMove(false);
+
+      const isTieBreaker = matchScore[Player.X] === WINS_PER_LEVEL_MATCH - 1 && matchScore[Player.O] === WINS_PER_LEVEL_MATCH - 1;
       
       const newScore = { ...matchScore };
       if (gameWinner !== 'draw') {
@@ -193,16 +211,34 @@ const App: React.FC = () => {
 
       const p1Score = newScore[Player.X];
       const p2Score = newScore[Player.O];
-      let currentMatchWinner: Player | null = null;
+      let currentMatchWinner: Player | 'draw' | null = null;
 
       if (p1Score >= WINS_PER_LEVEL_MATCH) currentMatchWinner = Player.X;
       else if (p2Score >= WINS_PER_LEVEL_MATCH) currentMatchWinner = Player.O;
       
-      setMatchWinner(currentMatchWinner);
+      setMatchWinner(currentMatchWinner as Player | null);
+      
+      // --- Achievement Checks ---
+      if (gameWinner === Player.X) {
+        unlockAchievement('first_win');
+        if (level.winCondition >= 6) unlockAchievement('connect_6');
+        if (level.obstacles >= 5) unlockAchievement('obstacle_course');
+      }
+
+      if (currentMatchWinner) {
+        if (gameMode === GameMode.TwoPlayer) unlockAchievement('socialite');
+        if (currentMatchWinner === Player.X) {
+            if (gameMode === GameMode.AI) unlockAchievement('ai_slayer');
+            if (newScore[Player.O] === 0) unlockAchievement('flawless_victory');
+            if (isTieBreaker) unlockAchievement('clutch_performer');
+        }
+      }
+      // --- End Achievement Checks ---
 
       if (currentMatchWinner) {
         const diff = gameMode === GameMode.TwoPlayer ? null : difficulty;
-        statsService.updateStats(gameMode, diff, currentMatchWinner);
+        const newStats = statsService.updateStats(gameMode, diff, currentMatchWinner);
+        setStats(newStats);
         
         if (currentMatchWinner === Player.X && gameMode !== GameMode.TwoPlayer) {
           const newProgress = progressService.completeLevel(difficulty, level.level);
@@ -213,7 +249,13 @@ const App: React.FC = () => {
               setNextLevel(nextLevelData);
               if (nextLevelData.difficulty !== level.difficulty) {
                 setIsDifficultyTransition(true);
+                if(difficulty === Difficulty.Simple) unlockAchievement('simple_complete');
+                if(difficulty === Difficulty.Hard) unlockAchievement('hard_complete');
               }
+          } else {
+             if(difficulty === Difficulty.Pro) {
+                unlockAchievement('pro_complete');
+             }
           }
         }
       }
@@ -237,7 +279,7 @@ const App: React.FC = () => {
           setImageLoading(false);
         }
       }
-  }, [gameMode, difficulty, level, profile, matchScore]);
+  }, [gameMode, difficulty, level, profile, matchScore, unlockAchievement]);
 
   const computerMove = useCallback(async () => {
     if (gameMode === GameMode.TwoPlayer) return;
@@ -313,13 +355,30 @@ const App: React.FC = () => {
   
   const handleShowStats = () => setGameState(GameState.Stats);
   const handleShowSettings = () => setGameState(GameState.Settings);
+  const handleShowAchievements = () => setGameState(GameState.Achievements);
   
   const handleResetProgress = () => {
     if(window.confirm("Are you sure you want to reset your level progress? This will lock all levels except the first one in each difficulty.")) {
       const newProgress = progressService.resetProgress();
       setProgress(newProgress);
+      alert("Level progress has been reset.");
     }
   }
+  
+  const handleResetAchievements = () => {
+    if(window.confirm("Are you sure you want to reset all your achievements?")) {
+      achievementsService.resetAchievements();
+      alert("Achievements have been reset.");
+    }
+  }
+
+  const handleResetStats = () => {
+    if (window.confirm("Are you sure you want to reset all your stats? This cannot be undone.")) {
+        const newStats = statsService.resetStats();
+        setStats(newStats);
+        alert("Player stats have been reset.");
+    }
+  };
 
   const renderContent = () => {
     const isTieBreaker = matchScore[Player.X] === WINS_PER_LEVEL_MATCH - 1 &&
@@ -328,7 +387,7 @@ const App: React.FC = () => {
 
     switch(gameState) {
       case GameState.Menu:
-        return <MenuScreen onStartGame={handleGameSetup} onShowStats={handleShowStats} onShowSettings={handleShowSettings} progress={progress} settings={settings} />;
+        return <MenuScreen onStartGame={handleGameSetup} onShowStats={handleShowStats} onShowSettings={handleShowSettings} onShowAchievements={handleShowAchievements} progress={progress} settings={settings} />;
       case GameState.Settings:
         return <SettingsScreen onBack={() => setGameState(GameState.Menu)} currentSettings={settings} onSettingsChange={handleSettingsChange} />;
       case GameState.AgeCheck:
@@ -336,7 +395,9 @@ const App: React.FC = () => {
       case GameState.ProfileSelect:
         return <ProfileSelectScreen onSelect={handleProfileSelect} onBack={() => setGameState(GameState.Menu)} />;
       case GameState.Stats:
-        return <PlayerStatsScreen onBack={() => setGameState(GameState.Menu)} theme={theme} onResetProgress={handleResetProgress} />;
+        return <PlayerStatsScreen onBack={() => setGameState(GameState.Menu)} theme={theme} stats={stats} onResetProgress={handleResetProgress} onResetAchievements={handleResetAchievements} onResetStats={handleResetStats} />;
+      case GameState.Achievements:
+        return <AchievementsScreen onBack={() => setGameState(GameState.Menu)} theme={theme} />;
       case GameState.LevelStart:
       case GameState.Playing:
       case GameState.Paused:
@@ -422,6 +483,13 @@ const App: React.FC = () => {
   return (
     <main className={`min-h-screen text-white flex items-center justify-center p-4 transition-colors duration-500 ${theme.background}`}>
       {renderContent()}
+      {newlyUnlockedAchievement && (
+        <AchievementToast 
+          achievement={newlyUnlockedAchievement}
+          onDismiss={() => setNewlyUnlockedAchievement(null)}
+          theme={theme}
+        />
+      )}
     </main>
   );
 };

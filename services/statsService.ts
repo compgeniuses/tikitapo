@@ -63,7 +63,7 @@ export const updateStats = (
   gameMode: GameMode,
   difficulty: Difficulty | null,
   winner: Player | 'draw'
-): void => {
+): Stats => {
   const stats = getStats();
   
   let gameStats: GameStats | null = null;
@@ -85,6 +85,7 @@ export const updateStats = (
   }
 
   saveStats(stats);
+  return stats;
 };
 
 export const resetStats = (): Stats => {

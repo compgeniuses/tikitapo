@@ -1,4 +1,3 @@
-
 let audioContext: AudioContext | null = null;
 
 const getAudioContext = (): AudioContext => {
@@ -35,7 +34,6 @@ export const playMoveSound = () => {
 };
 
 export const playWinSound = () => {
-    const context = getAudioContext();
     const notes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
     notes.forEach((note, i) => {
         setTimeout(() => playSound('triangle', note, 0.2), i * 100);
@@ -49,4 +47,11 @@ export const playDrawSound = () => {
 
 export const playUISound = () => {
     playSound('square', 800, 0.05, 0.1);
+};
+
+export const playAchievementSound = () => {
+    const notes = [392.00, 523.25, 659.25, 783.99]; // G4, C5, E5, G5
+    notes.forEach((note, i) => {
+        setTimeout(() => playSound('triangle', note, 0.25, 0.4), i * 80);
+    });
 };
