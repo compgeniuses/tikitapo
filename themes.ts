@@ -2,8 +2,9 @@ export interface Theme {
   name: string;
   background: string;
   boardBg: string;
+  boardBoxShadow: string;
   cellBg: string;
-  cellHoverBg: string;
+  cellHoverEffect: string;
   titleGradient: string;
   accent1: string; // text color
   accent1Bg: string; // bg color
@@ -13,15 +14,17 @@ export interface Theme {
   playerOColor: string;
   obstacleColor: string;
   winningCellBg: string;
+  winningCellBoxShadow: string;
 }
 
 export const THEMES: Theme[] = [
   {
     name: 'Sci-Fi',
-    background: 'bg-gray-900 bg-[radial-gradient(#1f2937_1px,transparent_1px)] [background-size:16px_16px]',
-    boardBg: 'bg-gray-800',
-    cellBg: 'bg-gray-700',
-    cellHoverBg: 'hover:bg-cyan-900',
+    background: "bg-gray-900 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] animate-[move-stars_200s_linear_infinite]",
+    boardBg: 'bg-gray-800/50 backdrop-blur-sm border-2 border-cyan-500/30',
+    boardBoxShadow: 'shadow-[0_0_25px_3px_rgba(0,255,255,0.2)]',
+    cellBg: 'bg-cyan-900/20',
+    cellHoverEffect: 'hover:bg-cyan-700/50 hover:shadow-[inset_0_0_10px_rgba(100,255,255,0.5)]',
     titleGradient: 'from-cyan-400 to-purple-500',
     accent1: 'text-cyan-300',
     accent1Bg: 'bg-cyan-500',
@@ -30,14 +33,16 @@ export const THEMES: Theme[] = [
     playerXColor: 'text-cyan-400',
     playerOColor: 'text-yellow-400',
     obstacleColor: 'text-gray-500',
-    winningCellBg: 'animate-pulse bg-yellow-500',
+    winningCellBg: 'bg-yellow-500/80 animate-pulse',
+    winningCellBoxShadow: 'shadow-[0_0_15px_3px_rgba(251,191,36,0.7)]',
   },
   {
     name: 'Jungle',
-    background: 'bg-green-900 bg-[url("data:image/svg+xml,%3Csvg%20xmlns=\'http://www.w3.org/2000/svg\'%20width=\'28\'%20height=\'49\'%20viewBox=\'0%200%2028%2049\'%3E%3Cg%20fill-rule=\'evenodd\'%3E%3Cg%20id=\'hexagons\'%20fill=\'%231e3b20\'%20fill-opacity=\'0.2\'%20fill-rule=\'nonzero\'%3E%3Cpath%20d=\'M13.99%209.25l13.99%208.077v16.154L13.99%2041.556%200%2033.48V17.327L13.99%209.25zM-13.99%201.173l13.99%208.076v16.154L-13.99%2033.48V17.327L-27.98%209.25l13.99-8.077zM27.98%201.173l13.99%208.076v16.154L27.98%2033.48V17.327L13.99%209.25l13.99-8.077zM13.99%2025.404l13.99%208.077v16.154L13.99%2057.712%200%2049.635V33.48l13.99-8.076zM-13.99%2017.327l13.99%208.077v16.154L-13.99%2049.635V33.48L-27.98%2025.404l13.99-8.077zM27.98%2017.327l13.99%208.077v16.154L27.98%2049.635V33.48L13.99%2025.404l13.99-8.077z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")]',
-    boardBg: 'bg-yellow-900/50 backdrop-blur-sm border-2 border-yellow-700',
-    cellBg: 'bg-green-800',
-    cellHoverBg: 'hover:bg-green-700',
+    background: 'bg-[#14281D] bg-[url("data:image/svg+xml,%3Csvg%20xmlns=\'http://www.w3.org/2000/svg\'%20width=\'100\'%20height=\'100\'%20viewBox=\'0%200%20100%20100\'%3E%3Cg%20fill=\'%231a382a\'%20fill-opacity=\'0.4\'%3E%3Cpath%20d=\'M0%2050A50%2050%200%200%201%2050%200h50v50a50%2050%200%200%201-50%2050H0V50zm100%200V0h-50a50%2050%200%200%201%2050%2050zM0%200h50v50A50%2050%200%200%201%200%200z\'/%3E%3C/g%3E%3C/svg%3E")] bg-[size:100px_100px] animate-[pan-jungle_120s_linear_infinite]',
+    boardBg: 'bg-yellow-900/50 backdrop-blur-sm border-4 border-yellow-800/80',
+    boardBoxShadow: 'shadow-[0_0_25px_5px_rgba(110,60,30,0.5)]',
+    cellBg: 'bg-green-900/50',
+    cellHoverEffect: 'hover:bg-green-800/70 hover:shadow-[inset_0_0_10px_rgba(134,239,172,0.4)]',
     titleGradient: 'from-yellow-400 to-orange-500',
     accent1: 'text-yellow-300',
     accent1Bg: 'bg-yellow-600',
@@ -45,15 +50,17 @@ export const THEMES: Theme[] = [
     accent2Bg: 'bg-orange-600',
     playerXColor: 'text-lime-400',
     playerOColor: 'text-red-500',
-    obstacleColor: 'text-yellow-900',
-    winningCellBg: 'animate-pulse bg-lime-500',
+    obstacleColor: 'text-yellow-900/80',
+    winningCellBg: 'bg-lime-500/80 animate-pulse',
+    winningCellBoxShadow: 'shadow-[0_0_15px_3px_rgba(190,242,100,0.7)]',
   },
-    {
+  {
     name: 'Ocean',
-    background: 'bg-blue-900 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.05)_0px,_rgba(255,255,255,0.05)_1px,_transparent_1px),radial-gradient(circle_at_center,_rgba(255,255,255,0.05)_0px,_rgba(255,255,255,0.05)_1px,_transparent_1px)] [background-size:20px_20px]',
-    boardBg: 'bg-cyan-900/60 backdrop-blur-sm border-2 border-cyan-700',
-    cellBg: 'bg-blue-800',
-    cellHoverBg: 'hover:bg-blue-700',
+    background: 'bg-gradient-to-br from-slate-900 via-blue-900 to-cyan-900 bg-[size:400%_400%] animate-[ocean-gradient_15s_ease_infinite]',
+    boardBg: 'bg-cyan-900/50 backdrop-blur-sm border-2 border-cyan-700/50',
+    boardBoxShadow: 'shadow-[0_0_25px_4px_rgba(34,211,238,0.25)]',
+    cellBg: 'bg-blue-800/30',
+    cellHoverEffect: 'hover:bg-blue-700/50 hover:shadow-[inset_0_0_10px_rgba(125,211,252,0.5)]',
     titleGradient: 'from-teal-300 to-sky-400',
     accent1: 'text-teal-200',
     accent1Bg: 'bg-teal-500',
@@ -61,7 +68,8 @@ export const THEMES: Theme[] = [
     accent2Bg: 'bg-sky-600',
     playerXColor: 'text-white',
     playerOColor: 'text-orange-400',
-    obstacleColor: 'text-gray-400',
-    winningCellBg: 'animate-pulse bg-teal-400',
+    obstacleColor: 'text-gray-400/80',
+    winningCellBg: 'bg-teal-400/80 animate-pulse',
+    winningCellBoxShadow: 'shadow-[0_0_15px_3px_rgba(45,212,191,0.7)]',
   }
 ];

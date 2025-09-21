@@ -46,9 +46,9 @@ const Cell: React.FC<{
         <div
             onClick={onClick}
             className={`flex items-center justify-center rounded-md aspect-square transition-all duration-300
-                ${cell === CellState.Empty && !disabled ? `${theme.cellBg} ${theme.cellHoverBg} cursor-pointer` : `${theme.cellBg}/50`}
+                ${cell === CellState.Empty && !disabled ? `${theme.cellBg} ${theme.cellHoverEffect} cursor-pointer` : `${theme.cellBg}/50`}
                 ${disabled && cell === CellState.Empty ? 'cursor-not-allowed' : ''}
-                ${isWinner ? theme.winningCellBg : ''}
+                ${isWinner ? `${theme.winningCellBg} ${theme.winningCellBoxShadow}` : ''}
             `}
         >
             <div className={`transition-transform duration-300 ease-out ${isRendered ? 'scale-100' : 'scale-0'}`}>
@@ -67,7 +67,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ board, onCellClick, winnin
 
   return (
     <div 
-        className={`${theme.boardBg} p-2 sm:p-4 rounded-lg shadow-2xl`}
+        className={`${theme.boardBg} p-2 sm:p-4 rounded-lg transition-shadow duration-500 ${theme.boardBoxShadow}`}
         style={{
             display: 'grid',
             gridTemplateColumns: `repeat(${boardSize}, minmax(0, 1fr))`,
