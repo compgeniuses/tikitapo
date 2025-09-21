@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { GameState, GameMode, Difficulty, Player, Profile, Board, CellState, PlayerNames, Progress, Settings, MatchScore, Achievement, Stats, Lobby, OnlineGameData, PlayerAvatars } from './types';
 import type { Level, Move } from './types';
 import { LEVELS_BY_DIFFICULTY, WINS_PER_LEVEL_MATCH, ALL_ACHIEVEMENTS } from './constants';
@@ -61,6 +61,7 @@ const App: React.FC = () => {
   const [matchScore, setMatchScore] = useState<MatchScore>({ [Player.X]: 0, [Player.O]: 0 });
   const [matchWinner, setMatchWinner] = useState<Player | null>(null);
   const [roundNumber, setRoundNumber] = useState(1);
+  const [roundStarter, setRoundStarter] = useState<Player>(Player.X);
   const [isDifficultyTransition, setIsDifficultyTransition] = useState(false);
   
   const [newlyUnlockedAchievement, setNewlyUnlockedAchievement] = useState<Achievement | null>(null);
@@ -71,6 +72,15 @@ const App: React.FC = () => {
   const [myPlayerPiece, setMyPlayerPiece] = useState<Player | null>(null);
 
   const moveInProgressRef = useRef(false);
+
+  const currentBackground = useMemo(() => {
+    if (!theme.backgrounds || theme.backgrounds.length === 0) {
+      return ''; // Fallback
+    }
+    // Cycle through backgrounds based on level number.
+    const index = (level.level - 1) % theme.backgrounds.length;
+    return theme.backgrounds[index];
+  }, [theme, level]);
 
   const unlockAchievement = useCallback((id: string) => {
     if (achievementsService.unlockAchievement(id)) {
@@ -191,12 +201,13 @@ const App: React.FC = () => {
     handleSettingsChange(latestSettings);
 
     const newBoard = gameService.createBoard(gameLevel.boardSize, gameLevel.obstacles);
+    const newStarter = resetScore ? Player.X : roundStarter;
+
     setBoard(newBoard);
-    setCurrentPlayer(Player.X);
+    setCurrentPlayer(newStarter);
     setWinner(null);
     setWinningLine([]);
     setGameState(GameState.LevelStart);
-    setIsComputerTurn(false);
     setGeneratedImage(null);
     setImageError(null);
     setImageLoading(false);
@@ -207,7 +218,16 @@ const App: React.FC = () => {
     setIsAiThinkingMove(false);
     setIsDifficultyTransition(false);
     setPlayerAvatars({});
-  }, [level, settings, gameMode, handleSettingsChange]);
+    
+    // If computer is the new starter, set its turn
+    const computerStarts = newStarter === Player.O && gameMode !== GameMode.TwoPlayer && gameMode !== GameMode.Online;
+    setIsComputerTurn(computerStarts);
+    
+    // Reset round starter for a brand new match
+    if (resetScore) {
+      setRoundStarter(Player.X);
+    }
+  }, [level, settings, gameMode, handleSettingsChange, roundStarter]);
 
   const handleGameSetup = (mode: GameMode, selectedLevel: Level) => {
     setGameMode(mode);
@@ -296,6 +316,15 @@ const App: React.FC = () => {
       setIsAiThinkingMove(false);
       setAiMessage(null);
 
+      // Determine starter for the next round
+      if (gameWinner === 'draw') {
+        setRoundStarter(prev => (prev === Player.X ? Player.O : Player.X));
+        audioService.playDrawSound();
+      } else {
+        setRoundStarter(gameWinner === Player.X ? Player.O : Player.X);
+        audioService.playWinSound();
+      }
+
       const isTieBreaker = matchScore[Player.X] === WINS_PER_LEVEL_MATCH - 1 && matchScore[Player.O] === WINS_PER_LEVEL_MATCH - 1;
       
       const newScore = { ...matchScore };
@@ -353,12 +382,6 @@ const App: React.FC = () => {
              }
           }
         }
-      }
-
-      if (gameWinner === 'draw') {
-        audioService.playDrawSound();
-      } else {
-        audioService.playWinSound();
       }
 
       if (gameMode === GameMode.AI && currentMatchWinner === Player.X && profile) {
@@ -591,7 +614,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <main className={`min-h-screen text-white flex items-center justify-center p-4 transition-colors duration-500 ${theme.background}`}>
+    <main className={`min-h-screen text-white flex items-center justify-center p-4 transition-colors duration-500 ${currentBackground}`}>
       {renderContent()}
       {newlyUnlockedAchievement && (
         <AchievementToast 

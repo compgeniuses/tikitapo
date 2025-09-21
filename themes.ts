@@ -1,6 +1,6 @@
 export interface Theme {
   name: string;
-  background: string;
+  backgrounds: string[];
   boardBg: string;
   boardBoxShadow: string;
   cellBg: string;
@@ -20,7 +20,13 @@ export interface Theme {
 export const THEMES: Theme[] = [
   {
     name: 'Sci-Fi',
-    background: "bg-gray-900 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] animate-[move-stars_200s_linear_infinite]",
+    backgrounds: [
+        "bg-gray-900 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] animate-[move-stars_200s_linear_infinite]",
+        "bg-slate-900 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] animate-[warp-stars_80s_linear_infinite]",
+        "bg-indigo-900 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] animate-[move-stars_150s_linear_infinite]",
+        "bg-black bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] animate-[warp-stars_60s_linear_infinite]",
+        "bg-purple-900/50 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] animate-[move-stars_250s_linear_infinite]",
+    ],
     boardBg: 'bg-gray-800/50 backdrop-blur-sm border-2 border-cyan-500/30',
     boardBoxShadow: 'shadow-[0_0_25px_3px_rgba(0,255,255,0.2)]',
     cellBg: 'bg-cyan-900/20',
@@ -38,7 +44,11 @@ export const THEMES: Theme[] = [
   },
   {
     name: 'Jungle',
-    background: 'bg-[#14281D] bg-[url("data:image/svg+xml,%3Csvg%20xmlns=\'http://www.w3.org/2000/svg\'%20width=\'100\'%20height=\'100\'%20viewBox=\'0%200%20100%20100\'%3E%3Cg%20fill=\'%231a382a\'%20fill-opacity=\'0.4\'%3E%3Cpath%20d=\'M0%2050A50%2050%200%200%201%2050%200h50v50a50%2050%200%200%201-50%2050H0V50zm100%200V0h-50a50%2050%200%200%201%2050%2050zM0%200h50v50A50%2050%200%200%201%200%200z\'/%3E%3C/g%3E%3C/svg%3E")] bg-[size:100px_100px] animate-[pan-jungle_120s_linear_infinite]',
+    backgrounds: [
+        'bg-[#14281D] bg-[url("data:image/svg+xml,%3Csvg%20xmlns=\'http://www.w3.org/2000/svg\'%20width=\'100\'%20height=\'100\'%20viewBox=\'0%200%20100%20100\'%3E%3Cg%20fill=\'%231a382a\'%20fill-opacity=\'0.4\'%3E%3Cpath%20d=\'M0%2050A50%2050%200%200%201%2050%200h50v50a50%2050%200%200%201-50%2050H0V50zm100%200V0h-50a50%2050%200%200%201%2050%2050zM0%200h50v50A50%2050%200%200%201%200%200z\'/%3E%3C/g%3E%3C/svg%3E")] bg-[size:100px_100px] animate-[pan-jungle_120s_linear_infinite]',
+        'bg-[#22382D] bg-[url("data:image/svg+xml,%3Csvg%20xmlns=\'http://www.w3.org/2000/svg\'%20width=\'100\'%20height=\'100\'%20viewBox=\'0%200%20100%20100\'%3E%3Cg%20fill=\'%231a382a\'%20fill-opacity=\'0.6\'%3E%3Cpath%20d=\'M0%2050A50%2050%200%200%201%2050%200h50v50a50%2050%200%200%201-50%2050H0V50zm100%200V0h-50a50%2050%200%200%201%2050%2050zM0%200h50v50A50%2050%200%200%201%200%200z\'/%3E%3C/g%3E%3C/svg%3E")] bg-[size:80px_80px] animate-[deep-jungle_90s_linear_infinite]',
+        'bg-[#0c1c13] bg-[url("data:image/svg+xml,%3Csvg%20xmlns=\'http://www.w3.org/2000/svg\'%20width=\'100\'%20height=\'100\'%20viewBox=\'0%200%20100%20100\'%3E%3Cg%20fill=\'%231a382a\'%20fill-opacity=\'0.3\'%3E%3Cpath%20d=\'M0%2050A50%2050%200%200%201%2050%200h50v50a50%2050%200%200%201-50%2050H0V50zm100%200V0h-50a50%2050%200%200%201%2050%2050zM0%200h50v50A50%2050%200%200%201%200%200z\'/%3E%3C/g%3E%3C/svg%3E")] bg-[size:120px_120px] animate-[pan-jungle_150s_linear_infinite]',
+    ],
     boardBg: 'bg-yellow-900/50 backdrop-blur-sm border-4 border-yellow-800/80',
     boardBoxShadow: 'shadow-[0_0_25px_5px_rgba(110,60,30,0.5)]',
     cellBg: 'bg-green-900/50',
@@ -56,7 +66,12 @@ export const THEMES: Theme[] = [
   },
   {
     name: 'Ocean',
-    background: 'bg-gradient-to-br from-slate-900 via-blue-900 to-cyan-900 bg-[size:400%_400%] animate-[ocean-gradient_15s_ease_infinite]',
+    backgrounds: [
+        'bg-gradient-to-br from-slate-900 via-blue-900 to-cyan-900 bg-[size:400%_400%] animate-[ocean-gradient_15s_ease_infinite]',
+        'bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 bg-[size:200%_200%] animate-[stormy-ocean_20s_ease_infinite]',
+        'bg-gradient-to-br from-cyan-900 via-teal-900 to-blue-900 bg-[size:400%_400%] animate-[ocean-gradient_25s_ease_infinite]',
+        'bg-gradient-to-br from-blue-900 via-cyan-800 to-slate-900 bg-[size:200%_200%] animate-[stormy-ocean_18s_ease_infinite]',
+    ],
     boardBg: 'bg-cyan-900/50 backdrop-blur-sm border-2 border-cyan-700/50',
     boardBoxShadow: 'shadow-[0_0_25px_4px_rgba(34,211,238,0.25)]',
     cellBg: 'bg-blue-800/30',

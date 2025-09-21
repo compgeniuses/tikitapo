@@ -25,16 +25,16 @@ const ControlButton: React.FC<{
   disabled: boolean;
   label: string;
   children: React.ReactNode;
-  theme: Theme;
-}> = ({ onClick, disabled, label, children, theme }) => (
+  colorClasses: string;
+}> = ({ onClick, disabled, label, children, colorClasses }) => (
   <div className="group relative">
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`p-3 rounded-full transition-all duration-200 ease-in-out transform
+      className={`p-4 rounded-full transition-all duration-200 ease-in-out transform
         ${disabled
           ? 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
-          : `bg-gray-700 hover:bg-gray-600 text-gray-200 hover:scale-110 hover:${theme.accent1}`
+          : `${colorClasses} text-white hover:scale-110`
         }`}
       aria-label={label}
     >
@@ -87,7 +87,7 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ level, currentPlayer, play
             <div className="font-bold text-sm lg:text-lg truncate leading-tight flex items-center justify-center gap-2">
                 <span className={theme.playerXColor}>{playerNames[Player.X]}: {matchScore[Player.X]}</span>
                 <span>-</span>
-                <span className={theme.playerOColor}>{matchScore[Player.O]}: {playerNames[Player.O]}</span>
+                <span className={theme.playerOColor}>{playerNames[Player.O]}: {matchScore[Player.O]}</span>
             </div>
         </div>
       )}
@@ -133,14 +133,14 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ level, currentPlayer, play
       {/* Controls Section */}
       <div className="flex items-center lg:flex-col gap-2 lg:gap-3 mt-auto lg:mt-4">
          <div className="flex lg:w-full items-center justify-center gap-2 lg:gap-3">
-            <ControlButton onClick={onPause} disabled={isPaused || isGameOver || isOnline} label={isOnline ? "Pause unavailable online" : "Pause Game"} theme={theme}>
-                <IconPause className="w-5 h-5 lg:w-6 lg:h-6" />
+            <ControlButton onClick={onPause} disabled={isPaused || isGameOver || isOnline} label={isOnline ? "Pause unavailable online" : "Pause Game"} colorClasses="bg-cyan-600 hover:bg-cyan-500">
+                <IconPause className="w-6 h-6 lg:w-7 lg:h-7" />
             </ControlButton>
-            <ControlButton onClick={onSuggestMove} disabled={isPaused || isGameOver || currentPlayer !== Player.X || isOnline} label={isOnline ? "Suggestion unavailable online" : "Suggest Move"} theme={theme}>
-                <IconSuggest className="w-5 h-5 lg:w-6 lg:h-6" />
+            <ControlButton onClick={onSuggestMove} disabled={isPaused || isGameOver || currentPlayer !== Player.X || isOnline} label={isOnline ? "Suggestion unavailable online" : "Suggest Move"} colorClasses="bg-yellow-500 hover:bg-yellow-400">
+                <IconSuggest className="w-6 h-6 lg:w-7 lg:h-7" />
             </ControlButton>
-            <ControlButton onClick={onStop} disabled={false} label="Stop Game" theme={theme}>
-                <IconStop className="w-5 h-5 lg:w-6 lg:h-6" />
+            <ControlButton onClick={onStop} disabled={false} label="Stop Game" colorClasses="bg-red-700 hover:bg-red-600">
+                <IconStop className="w-6 h-6 lg:w-7 lg:h-7" />
             </ControlButton>
         </div>
       </div>
