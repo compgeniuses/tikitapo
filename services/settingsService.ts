@@ -1,4 +1,4 @@
-import { Settings, Player, GameMode, Difficulty, PlayerNames } from '../types';
+import { Settings, Player, GameMode, Difficulty } from '../types';
 import { THEMES } from '../themes';
 
 const SETTINGS_KEY = 'connect-n-settings-v1';
@@ -11,6 +11,7 @@ const defaultSettings: Settings = {
   },
   lastPlayedMode: GameMode.Offline,
   lastPlayedDifficulty: Difficulty.Simple,
+  avatarUrl: '',
 };
 
 export const getSettings = (): Settings => {

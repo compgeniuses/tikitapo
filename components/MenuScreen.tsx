@@ -24,6 +24,13 @@ export const MenuScreen: React.FC<MenuScreenProps> = ({ onStartGame, onShowStats
   const handleStart = (level: Level) => {
     onStartGame(mode, level);
   }
+  
+  const handleModeSelect = (selectedMode: GameMode) => {
+    setMode(selectedMode);
+    if(selectedMode === GameMode.Online) {
+      onStartGame(GameMode.Online, TWO_PLAYER_LEVELS[0]); // Level is a placeholder for online
+    }
+  }
 
   const renderCpuLevelSelector = () => {
     const levels = LEVELS_BY_DIFFICULTY[selectedDifficulty];
@@ -105,10 +112,11 @@ export const MenuScreen: React.FC<MenuScreenProps> = ({ onStartGame, onShowStats
         {/* Game Mode */}
         <div>
           <label className={`block text-lg font-bold ${theme.accent1} mb-2`}>Game Mode</label>
-          <div className="grid grid-cols-3 gap-2">
-            <button onClick={() => setMode(GameMode.Offline)} className={`p-4 rounded-lg font-bold transition ${mode === GameMode.Offline ? `${theme.accent1Bg} ring-2 ring-white/50` : 'bg-gray-700 hover:bg-gray-600'}`}>vs CPU</button>
-            <button onClick={() => setMode(GameMode.AI)} className={`p-4 rounded-lg font-bold transition ${mode === GameMode.AI ? `${theme.accent1Bg} ring-2 ring-white/50` : 'bg-gray-700 hover:bg-gray-600'}`}>vs AI</button>
-            <button onClick={() => setMode(GameMode.TwoPlayer)} className={`p-4 rounded-lg font-bold transition ${mode === GameMode.TwoPlayer ? `${theme.accent1Bg} ring-2 ring-white/50` : 'bg-gray-700 hover:bg-gray-600'}`}>2 Player</button>
+          <div className="grid grid-cols-2 gap-2">
+            <button onClick={() => handleModeSelect(GameMode.Offline)} className={`p-4 rounded-lg font-bold transition ${mode === GameMode.Offline ? `${theme.accent1Bg} ring-2 ring-white/50` : 'bg-gray-700 hover:bg-gray-600'}`}>vs CPU</button>
+            <button onClick={() => handleModeSelect(GameMode.AI)} className={`p-4 rounded-lg font-bold transition ${mode === GameMode.AI ? `${theme.accent1Bg} ring-2 ring-white/50` : 'bg-gray-700 hover:bg-gray-600'}`}>vs AI</button>
+            <button onClick={() => handleModeSelect(GameMode.TwoPlayer)} className={`p-4 rounded-lg font-bold transition ${mode === GameMode.TwoPlayer ? `${theme.accent1Bg} ring-2 ring-white/50` : 'bg-gray-700 hover:bg-gray-600'}`}>2 Player</button>
+            <button onClick={() => handleModeSelect(GameMode.Online)} className={`p-4 rounded-lg font-bold transition ${mode === GameMode.Online ? `${theme.accent1Bg} ring-2 ring-white/50` : 'bg-gray-700 hover:bg-gray-600'}`}>Online</button>
           </div>
            {mode === GameMode.AI && <p className="text-center text-xs text-gray-400 mt-1">(Win to get a Gemini-generated image!)</p>}
         </div>

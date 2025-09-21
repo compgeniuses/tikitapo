@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Level, PlayerNames, MatchScore } from '../types';
+import type { Level, PlayerNames, MatchScore, PlayerAvatars } from '../types';
 import { Player, Difficulty } from '../types';
 import { IconX, IconO, IconPause, IconSuggest, IconStop } from './icons/PieceIcons';
 import type { Theme } from '../themes';
@@ -8,6 +8,7 @@ interface InfoPanelProps {
   level: Level;
   currentPlayer: Player;
   playerNames: PlayerNames;
+  playerAvatars?: PlayerAvatars;
   matchScore: MatchScore;
   onPause: () => void;
   onStop: () => void;
@@ -16,6 +17,7 @@ interface InfoPanelProps {
   isGameOver: boolean;
   isTieBreaker?: boolean;
   theme: Theme;
+  isOnline: boolean;
 }
 
 const ControlButton: React.FC<{
@@ -47,7 +49,14 @@ const ControlButton: React.FC<{
   </div>
 );
 
-export const InfoPanel: React.FC<InfoPanelProps> = ({ level, currentPlayer, playerNames, matchScore, onPause, onStop, onSuggestMove, isPaused, isGameOver, isTieBreaker, theme }) => {
+const Avatar: React.FC<{ src?: string }> = ({ src }) => {
+  if (!src) {
+    return <div className="w-10 h-10 rounded-full bg-gray-700 flex-shrink-0"></div>;
+  }
+  return <img src={src} alt="Player Avatar" className="w-10 h-10 rounded-full bg-gray-700 object-cover flex-shrink-0" />;
+}
+
+export const InfoPanel: React.FC<InfoPanelProps> = ({ level, currentPlayer, playerNames, playerAvatars, matchScore, onPause, onStop, onSuggestMove, isPaused, isGameOver, isTieBreaker, theme, isOnline }) => {
   return (
     <div className={`
       bg-gray-800/50 backdrop-blur-sm rounded-lg shadow-lg border border-cyan-500/20
@@ -58,11 +67,11 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ level, currentPlayer, play
       {/* Game Info Section */}
       <div className="flex flex-col lg:text-center">
         <h2 className={`text-xl lg:text-3xl font-orbitron font-black bg-clip-text text-transparent bg-gradient-to-r ${theme.titleGradient}`}>
-          LEVEL {level.level}
+          {isOnline ? 'ONLINE MATCH' : `LEVEL ${level.level}`}
         </h2>
-        <p className="text-sm font-bold text-gray-300">{level.difficulty}</p>
+        {!isOnline && <p className="text-sm font-bold text-gray-300">{level.difficulty}</p>}
         <p className="text-xs lg:text-base text-gray-400">Connect {level.winCondition}</p>
-        {level.difficulty === Difficulty.Simple && (
+        {!isOnline && level.difficulty === Difficulty.Simple && (
             <p className="text-xs text-gray-500 lg:text-sm">(Horiz/Vert Only)</p>
         )}
       </div>
@@ -70,39 +79,64 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ level, currentPlayer, play
       <div className="hidden lg:block h-px bg-cyan-500/20 my-2"></div>
       
       {/* Score Section */}
-      <div className="text-center">
-        <p className={`text-xs uppercase font-bold tracking-wider leading-tight transition-colors duration-300 ${isTieBreaker ? 'text-red-400 animate-pulse' : 'text-gray-400'}`}>
-            {isTieBreaker ? 'Final Round' : 'Score'}
-        </p>
-        <div className="font-bold text-sm lg:text-lg truncate leading-tight flex items-center justify-center gap-2">
-            <span className={theme.playerXColor}>{playerNames[Player.X]}: {matchScore[Player.X]}</span>
-            <span>-</span>
-            <span className={theme.playerOColor}>{matchScore[Player.O]}: {playerNames[Player.O]}</span>
+     {!isOnline && (
+        <div className="text-center">
+            <p className={`text-xs uppercase font-bold tracking-wider leading-tight transition-colors duration-300 ${isTieBreaker ? 'text-red-400 animate-pulse' : 'text-gray-400'}`}>
+                {isTieBreaker ? 'Final Round' : 'Score'}
+            </p>
+            <div className="font-bold text-sm lg:text-lg truncate leading-tight flex items-center justify-center gap-2">
+                <span className={theme.playerXColor}>{playerNames[Player.X]}: {matchScore[Player.X]}</span>
+                <span>-</span>
+                <span className={theme.playerOColor}>{matchScore[Player.O]}: {playerNames[Player.O]}</span>
+            </div>
         </div>
-      </div>
+      )}
+      {!isOnline && <div className="hidden lg:block h-px bg-cyan-500/20 my-2"></div>}
 
-      <div className="hidden lg:block h-px bg-cyan-500/20 my-2"></div>
 
       {/* Current Turn Section */}
-      <div className="bg-gray-900/50 p-2 lg:p-4 rounded-md flex items-center justify-center gap-2 lg:gap-3">
-        <div className="w-6 h-6 lg:w-8 lg:h-8">
-            {currentPlayer === Player.X ? <IconX className={theme.playerXColor} /> : <IconO className={theme.playerOColor} />}
+      {isOnline && playerAvatars ? (
+        <div className="flex flex-col gap-2">
+            <div className={`p-2 rounded-md transition-all duration-300 ${currentPlayer === Player.X ? 'bg-gray-600 ring-2 ring-cyan-400' : 'bg-gray-900/50'}`}>
+                <div className="flex items-center gap-3">
+                    <Avatar src={playerAvatars[Player.X]} />
+                    <div className="overflow-hidden">
+                        <p className={`font-bold truncate ${theme.playerXColor}`}>{playerNames[Player.X]}</p>
+                        <p className="text-xs text-gray-400">Playing as X</p>
+                    </div>
+                </div>
+            </div>
+            <div className={`p-2 rounded-md transition-all duration-300 ${currentPlayer === Player.O ? 'bg-gray-600 ring-2 ring-yellow-400' : 'bg-gray-900/50'}`}>
+                <div className="flex items-center gap-3">
+                    <Avatar src={playerAvatars[Player.O]} />
+                    <div className="overflow-hidden">
+                        <p className={`font-bold truncate ${theme.playerOColor}`}>{playerNames[Player.O]}</p>
+                        <p className="text-xs text-gray-400">Playing as O</p>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div className="text-left">
-            <p className="text-xs text-gray-400 leading-tight">TURN</p>
-            <span className={`font-bold text-sm lg:text-lg truncate leading-tight ${currentPlayer === Player.X ? theme.playerXColor : theme.playerOColor}`}>
-                {playerNames[currentPlayer]}
-            </span>
+      ) : (
+        <div className="bg-gray-900/50 p-2 lg:p-4 rounded-md flex items-center justify-center gap-2 lg:gap-3">
+            <div className="w-6 h-6 lg:w-8 lg:h-8">
+                {currentPlayer === Player.X ? <IconX className={theme.playerXColor} /> : <IconO className={theme.playerOColor} />}
+            </div>
+            <div className="text-left">
+                <p className="text-xs text-gray-400 leading-tight">TURN</p>
+                <span className={`font-bold text-sm lg:text-lg truncate leading-tight ${currentPlayer === Player.X ? theme.playerXColor : theme.playerOColor}`}>
+                    {playerNames[currentPlayer] || '...'}
+                </span>
+            </div>
         </div>
-      </div>
+      )}
       
       {/* Controls Section */}
       <div className="flex items-center lg:flex-col gap-2 lg:gap-3 mt-auto lg:mt-4">
          <div className="flex lg:w-full items-center justify-center gap-2 lg:gap-3">
-            <ControlButton onClick={onPause} disabled={isPaused || isGameOver} label="Pause Game" theme={theme}>
+            <ControlButton onClick={onPause} disabled={isPaused || isGameOver || isOnline} label={isOnline ? "Pause unavailable online" : "Pause Game"} theme={theme}>
                 <IconPause className="w-5 h-5 lg:w-6 lg:h-6" />
             </ControlButton>
-            <ControlButton onClick={onSuggestMove} disabled={isPaused || isGameOver || currentPlayer !== Player.X} label="Suggest Move" theme={theme}>
+            <ControlButton onClick={onSuggestMove} disabled={isPaused || isGameOver || currentPlayer !== Player.X || isOnline} label={isOnline ? "Suggestion unavailable online" : "Suggest Move"} theme={theme}>
                 <IconSuggest className="w-5 h-5 lg:w-6 lg:h-6" />
             </ControlButton>
             <ControlButton onClick={onStop} disabled={false} label="Stop Game" theme={theme}>

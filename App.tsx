@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, GameMode, Difficulty, Player, Profile, Board, CellState, PlayerNames, Progress, Settings, MatchScore, Achievement, Stats } from './types';
+import { GameState, GameMode, Difficulty, Player, Profile, Board, CellState, PlayerNames, Progress, Settings, MatchScore, Achievement, Stats, Lobby, OnlineGameData, PlayerAvatars } from './types';
 import type { Level, Move } from './types';
 import { LEVELS_BY_DIFFICULTY, WINS_PER_LEVEL_MATCH, ALL_ACHIEVEMENTS } from './constants';
 import { GameBoard } from './components/GameBoard';
@@ -14,6 +14,8 @@ import { AIPersonality } from './components/AIPersonality';
 import { LevelStartScreen } from './components/LevelStartScreen';
 import { AchievementsScreen } from './components/AchievementsScreen';
 import { AchievementToast } from './components/AchievementToast';
+import { OnlineLobbyScreen } from './components/OnlineLobbyScreen';
+import { AvatarCreationScreen } from './components/AvatarCreationScreen';
 import * as gameService from './services/gameService';
 import * as audioService from './services/audioService';
 import * as geminiService from './services/geminiService';
@@ -21,6 +23,7 @@ import * as statsService from './services/statsService';
 import * as progressService from './services/progressService';
 import * as settingsService from './services/settingsService';
 import * as achievementsService from './services/achievementsService';
+import * as onlineService from './services/onlineService';
 import { THEMES } from './themes';
 import type { Theme } from './themes';
 
@@ -54,12 +57,18 @@ const App: React.FC = () => {
   const [isAiThinkingMove, setIsAiThinkingMove] = useState(false);
   
   const [playerNamesForGame, setPlayerNamesForGame] = useState<PlayerNames>(settings.playerNames);
+  const [playerAvatars, setPlayerAvatars] = useState<PlayerAvatars>({});
   const [matchScore, setMatchScore] = useState<MatchScore>({ [Player.X]: 0, [Player.O]: 0 });
   const [matchWinner, setMatchWinner] = useState<Player | null>(null);
   const [roundNumber, setRoundNumber] = useState(1);
   const [isDifficultyTransition, setIsDifficultyTransition] = useState(false);
   
   const [newlyUnlockedAchievement, setNewlyUnlockedAchievement] = useState<Achievement | null>(null);
+  
+  // Online state
+  const [isConnected, setIsConnected] = useState(false);
+  const [lobbies, setLobbies] = useState<Lobby[]>([]);
+  const [myPlayerPiece, setMyPlayerPiece] = useState<Player | null>(null);
 
   const moveInProgressRef = useRef(false);
 
@@ -73,6 +82,69 @@ const App: React.FC = () => {
     }
   }, []);
 
+  const handleOnlineGameStart = useCallback((data: OnlineGameData) => {
+    setBoard(data.board);
+    setLevel(data.level);
+    
+    const myId = onlineService.getMySocketId();
+    const opponentId = Object.keys(data.players).find(id => id !== myId);
+    
+    const myData = data.players[myId!];
+    const opponentData = opponentId ? data.players[opponentId] : null;
+
+    setMyPlayerPiece(myData?.piece || null);
+
+    const names: PlayerNames = { [Player.X]: '', [Player.O]: '' };
+    const avatars: PlayerAvatars = { [Player.X]: '', [Player.O]: '' };
+
+    if (myData) {
+      names[myData.piece] = myData.name;
+      avatars[myData.piece] = myData.avatarUrl;
+    }
+    if (opponentData) {
+      names[opponentData.piece] = opponentData.name;
+      avatars[opponentData.piece] = opponentData.avatarUrl;
+    }
+
+    setPlayerNamesForGame(names);
+    setPlayerAvatars(avatars);
+    
+    const startingPlayerId = Object.keys(data.players).find(id => data.players[id].piece === Player.X);
+    setCurrentPlayer(startingPlayerId === myId ? Player.X : Player.O);
+    
+    setWinner(null);
+    setWinningLine([]);
+    setGameState(GameState.Playing);
+  }, []);
+
+
+  useEffect(() => {
+    if (gameState === GameState.OnlineLobby) {
+      onlineService.connect({
+        onConnect: () => setIsConnected(true),
+        onDisconnect: () => setIsConnected(false),
+        onLobbyUpdate: setLobbies,
+        onGameStart: handleOnlineGameStart,
+        onOpponentMove: (move) => {
+          setBoard(currentBoard => {
+            const newBoard = currentBoard.map(r => [...r]);
+            const opponentPiece = myPlayerPiece === Player.X ? Player.O : Player.X;
+            newBoard[move.row][move.col] = opponentPiece as unknown as CellState;
+            return newBoard;
+          });
+          setCurrentPlayer(myPlayerPiece!);
+          audioService.playMoveSound();
+        },
+        onGameOver: (gameWinner, line) => handleGameOver(gameWinner, line, true),
+      });
+    }
+    return () => {
+      if (gameState !== GameState.OnlineLobby) {
+        onlineService.disconnect();
+      }
+    };
+  }, [gameState, handleOnlineGameStart, myPlayerPiece]);
+  
   useEffect(() => {
     // Refresh progress from storage when returning to menu
     if (gameState === GameState.Menu) {
@@ -134,10 +206,17 @@ const App: React.FC = () => {
     setIsAiThinkingComment(false);
     setIsAiThinkingMove(false);
     setIsDifficultyTransition(false);
+    setPlayerAvatars({});
   }, [level, settings, gameMode, handleSettingsChange]);
 
   const handleGameSetup = (mode: GameMode, selectedLevel: Level) => {
     setGameMode(mode);
+
+    if (mode === GameMode.Online) {
+      setGameState(GameState.OnlineLobby);
+      return;
+    }
+    
     setDifficulty(selectedLevel.difficulty);
     setLevel(selectedLevel);
 
@@ -172,7 +251,10 @@ const App: React.FC = () => {
   };
   
   const handleCellClick = (row: number, col: number) => {
-    if (gameState !== GameState.Playing || board[row][col] !== CellState.Empty || isComputerTurn || winner) return;
+    const isMyTurnOnline = gameMode === GameMode.Online && currentPlayer === myPlayerPiece;
+    const isMyTurnOffline = gameMode !== GameMode.Online && !isComputerTurn;
+    
+    if (gameState !== GameState.Playing || board[row][col] !== CellState.Empty || (!isMyTurnOnline && !isMyTurnOffline) || winner) return;
 
     audioService.playMoveSound();
     setAiMessage(null);
@@ -180,6 +262,12 @@ const App: React.FC = () => {
     newBoard[row][col] = currentPlayer as unknown as CellState;
     setBoard(newBoard);
     
+    if(gameMode === GameMode.Online){
+      onlineService.makeMove({row, col});
+      setCurrentPlayer(currentPlayer === Player.X ? Player.O : Player.X);
+      return;
+    }
+
     const winResult = gameService.checkWin(newBoard, level.winCondition);
     if (winResult) {
       handleGameOver(winResult.winner, winResult.line);
@@ -194,12 +282,19 @@ const App: React.FC = () => {
     }
   };
   
-  const handleGameOver = useCallback(async (gameWinner: Player | 'draw', line: Move[] = []) => {
+  const handleGameOver = useCallback(async (gameWinner: Player | 'draw', line: Move[] = [], isOnlineGame = false) => {
       setWinner(gameWinner);
       setWinningLine(line);
       setGameState(GameState.GameOver);
-      setAiMessage(null);
+      
+      if(isOnlineGame) {
+         if (gameWinner === 'draw') audioService.playDrawSound();
+         else audioService.playWinSound();
+         return;
+      }
+      
       setIsAiThinkingMove(false);
+      setAiMessage(null);
 
       const isTieBreaker = matchScore[Player.X] === WINS_PER_LEVEL_MATCH - 1 && matchScore[Player.O] === WINS_PER_LEVEL_MATCH - 1;
       
@@ -282,9 +377,9 @@ const App: React.FC = () => {
   }, [gameMode, difficulty, level, profile, matchScore, unlockAchievement]);
 
   const computerMove = useCallback(async () => {
-    if (gameMode === GameMode.TwoPlayer) return;
+    if (gameMode === GameMode.TwoPlayer || gameMode === GameMode.Online) return;
 
-    if (difficulty === Difficulty.Hard || difficulty === Difficulty.Pro) {
+    if (difficulty === Difficulty.Pro) {
         setIsAiThinkingMove(true);
         await new Promise(resolve => setTimeout(resolve, 50)); 
     } else {
@@ -344,10 +439,13 @@ const App: React.FC = () => {
 
   const handlePause = () => (gameState === GameState.Playing) && setGameState(GameState.Paused);
   const handleResume = () => (gameState === GameState.Paused) && setGameState(GameState.Playing);
-  const handleStop = () => setGameState(GameState.Menu);
+  const handleStop = () => {
+    if(gameMode === GameMode.Online) onlineService.leaveGame();
+    setGameState(GameState.Menu)
+  };
   
   const handleSuggestMove = () => {
-    if (gameState !== GameState.Playing || isComputerTurn) return;
+    if (gameState !== GameState.Playing || isComputerTurn || gameMode === GameMode.Online) return;
     const opponent = currentPlayer === Player.X ? Player.O : Player.X;
     const move = gameService.getSuggestedMove(board, currentPlayer, opponent, level.winCondition);
     if(move) handleCellClick(move.row, move.col);
@@ -356,6 +454,11 @@ const App: React.FC = () => {
   const handleShowStats = () => setGameState(GameState.Stats);
   const handleShowSettings = () => setGameState(GameState.Settings);
   const handleShowAchievements = () => setGameState(GameState.Achievements);
+  const handleGoToAvatarCreation = () => setGameState(GameState.AvatarCreation);
+  const handleSaveAvatar = (url: string) => {
+    handleSettingsChange({ ...settings, avatarUrl: url });
+    setGameState(GameState.Settings);
+  };
   
   const handleResetProgress = () => {
     if(window.confirm("Are you sure you want to reset your level progress? This will lock all levels except the first one in each difficulty.")) {
@@ -389,7 +492,9 @@ const App: React.FC = () => {
       case GameState.Menu:
         return <MenuScreen onStartGame={handleGameSetup} onShowStats={handleShowStats} onShowSettings={handleShowSettings} onShowAchievements={handleShowAchievements} progress={progress} settings={settings} />;
       case GameState.Settings:
-        return <SettingsScreen onBack={() => setGameState(GameState.Menu)} currentSettings={settings} onSettingsChange={handleSettingsChange} />;
+        return <SettingsScreen onBack={() => setGameState(GameState.Menu)} currentSettings={settings} onSettingsChange={handleSettingsChange} onGoToAvatarCreation={handleGoToAvatarCreation} />;
+      case GameState.AvatarCreation:
+        return <AvatarCreationScreen onBack={() => setGameState(GameState.Settings)} theme={theme} onSaveAvatar={handleSaveAvatar} />;
       case GameState.AgeCheck:
         return <AgeCheckScreen question={ageCheckAnswer} onSuccess={handleAgeCheckSuccess} onBack={() => setGameState(GameState.ProfileSelect)} />;
       case GameState.ProfileSelect:
@@ -398,6 +503,8 @@ const App: React.FC = () => {
         return <PlayerStatsScreen onBack={() => setGameState(GameState.Menu)} theme={theme} stats={stats} onResetProgress={handleResetProgress} onResetAchievements={handleResetAchievements} onResetStats={handleResetStats} />;
       case GameState.Achievements:
         return <AchievementsScreen onBack={() => setGameState(GameState.Menu)} theme={theme} />;
+      case GameState.OnlineLobby:
+        return <OnlineLobbyScreen onBack={() => setGameState(GameState.Menu)} theme={theme} isConnected={isConnected} lobbies={lobbies} myName={settings.playerNames[Player.X]} myAvatarUrl={settings.avatarUrl} />;
       case GameState.LevelStart:
       case GameState.Playing:
       case GameState.Paused:
@@ -409,6 +516,7 @@ const App: React.FC = () => {
                 level={level}
                 currentPlayer={currentPlayer}
                 playerNames={playerNamesForGame}
+                playerAvatars={playerAvatars}
                 matchScore={matchScore}
                 onPause={handlePause}
                 onStop={handleStop}
@@ -417,6 +525,7 @@ const App: React.FC = () => {
                 isGameOver={gameState === GameState.GameOver}
                 isTieBreaker={isTieBreaker}
                 theme={theme}
+                isOnline={gameMode === GameMode.Online}
               />
               {gameMode === GameMode.AI && (gameState === GameState.Playing || gameState === GameState.Paused) && (
                 <AIPersonality 
@@ -431,7 +540,7 @@ const App: React.FC = () => {
                 board={board} 
                 onCellClick={handleCellClick} 
                 winningLine={winningLine} 
-                disabled={isComputerTurn || gameState !== GameState.Playing}
+                disabled={(gameMode === GameMode.Online ? currentPlayer !== myPlayerPiece : isComputerTurn) || gameState !== GameState.Playing}
                 theme={theme}
               />
               {isAiThinkingMove && (
@@ -440,7 +549,7 @@ const App: React.FC = () => {
                     <h2 className="text-2xl font-orbitron font-bold text-purple-300 mt-6">{difficulty.toUpperCase()} AI IS THINKING...</h2>
                 </div>
               )}
-              {gameState === GameState.Paused && (
+              {gameState === GameState.Paused && gameMode !== GameMode.Online && (
                 <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center rounded-lg z-20">
                     <h2 className="text-4xl font-orbitron font-bold text-cyan-400 mb-6">PAUSED</h2>
                     <button onClick={handleResume} className="px-6 py-3 bg-green-500 hover:bg-green-400 rounded-md text-xl font-bold transition-transform transform hover:scale-105">
@@ -448,7 +557,7 @@ const App: React.FC = () => {
                     </button>
                 </div>
               )}
-               {gameState === GameState.LevelStart && (
+               {gameState === GameState.LevelStart && gameMode !== GameMode.Online && (
                   <LevelStartScreen
                     levelNumber={level.level}
                     roundNumber={roundNumber}
@@ -470,6 +579,7 @@ const App: React.FC = () => {
                   currentLevel={level}
                   roundNumber={roundNumber}
                   isDifficultyTransition={isDifficultyTransition}
+                  isOnline={gameMode === GameMode.Online}
                 />
                )}
             </div>

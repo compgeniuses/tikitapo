@@ -18,16 +18,24 @@ interface GameOverScreenProps {
   currentLevel: Level;
   roundNumber: number;
   isDifficultyTransition: boolean;
+  isOnline?: boolean;
 }
 
 export const GameOverScreen: React.FC<GameOverScreenProps> = ({ 
-  winner, playerNames, onRestart, onMenu, generatedImage, imageLoading, imageError, nextLevel, matchScore, matchWinner, currentLevel, roundNumber, isDifficultyTransition
+  winner, playerNames, onRestart, onMenu, generatedImage, imageLoading, imageError, nextLevel, matchScore, matchWinner, currentLevel, roundNumber, isDifficultyTransition, isOnline = false
 }) => {
   const isHumanWinner = winner === Player.X;
 
-  const heading = matchWinner 
-    ? (isDifficultyTransition ? `${currentLevel.difficulty.toUpperCase()} COMPLETE!` : 'MATCH OVER')
-    : `ROUND ${roundNumber} OVER`;
+  const getOnlineHeading = () => {
+    if (winner === 'draw') return 'DRAW!';
+    return `${playerNames[winner as Player].toUpperCase()} WINS!`;
+  }
+
+  const heading = isOnline 
+    ? getOnlineHeading()
+    : matchWinner 
+      ? (isDifficultyTransition ? `${currentLevel.difficulty.toUpperCase()} COMPLETE!` : 'MATCH OVER')
+      : `ROUND ${roundNumber} OVER`;
   
   const roundMessage = winner === 'draw' 
     ? `ROUND ${roundNumber} DRAW!` 
@@ -40,6 +48,8 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({
     : '';
 
   const renderActionButton = () => {
+    if (isOnline) return null; // Server will handle next steps
+    
     if (matchWinner) {
       if (matchWinner === Player.X && nextLevel) {
         if (isDifficultyTransition) {
@@ -79,16 +89,18 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({
         {heading}
       </h2>
 
-      <p className="text-2xl font-bold mb-2">{matchWinner ? finalMessage : roundMessage}</p>
+      {!isOnline && <p className="text-2xl font-bold mb-2">{matchWinner ? finalMessage : roundMessage}</p>}
 
-      <div className="bg-gray-900/50 p-2 rounded-md mb-4">
-        <p className="text-sm text-gray-400">SCORE (First to {WINS_PER_LEVEL_MATCH})</p>
-        <p className="text-xl font-bold font-mono">
-            <span className="text-cyan-400">{playerNames[Player.X]}: {matchScore[Player.X]}</span>
-            <span className="mx-2">-</span>
-            <span className="text-yellow-400">{matchScore[Player.O]}: {playerNames[Player.O]}</span>
-        </p>
-      </div>
+      {!isOnline && (
+        <div className="bg-gray-900/50 p-2 rounded-md mb-4">
+            <p className="text-sm text-gray-400">SCORE (First to {WINS_PER_LEVEL_MATCH})</p>
+            <p className="text-xl font-bold font-mono">
+                <span className="text-cyan-400">{playerNames[Player.X]}: {matchScore[Player.X]}</span>
+                <span className="mx-2">-</span>
+                <span className="text-yellow-400">{matchScore[Player.O]}: {playerNames[Player.O]}</span>
+            </p>
+        </div>
+      )}
       
       {generatedImage && (
         <div className="mb-4">
@@ -113,7 +125,7 @@ export const GameOverScreen: React.FC<GameOverScreenProps> = ({
       <div className="flex gap-4">
         {renderActionButton()}
         <button onClick={onMenu} className="px-6 py-3 bg-gray-600 hover:bg-gray-500 rounded-md text-xl font-bold transition-transform transform hover:scale-105">
-          MENU
+          {isOnline ? 'BACK TO LOBBY' : 'MENU'}
         </button>
       </div>
     </div>

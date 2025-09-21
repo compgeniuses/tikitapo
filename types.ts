@@ -24,12 +24,15 @@ export enum GameState {
   GameOver = 'gameOver',
   Stats = 'stats',
   Achievements = 'achievements',
+  OnlineLobby = 'onlineLobby',
+  AvatarCreation = 'avatarCreation',
 }
 
 export enum GameMode {
   Offline = 'offline',
   AI = 'ai',
   TwoPlayer = 'twoPlayer',
+  Online = 'online',
 }
 
 export enum Difficulty {
@@ -60,6 +63,11 @@ export interface Move {
 export interface PlayerNames {
   [Player.X]: string;
   [Player.O]: string;
+}
+
+export interface PlayerAvatars {
+  [Player.X]?: string;
+  [Player.O]?: string;
 }
 
 export interface MatchScore {
@@ -94,10 +102,26 @@ export interface Settings {
   playerNames: PlayerNames;
   lastPlayedMode: GameMode;
   lastPlayedDifficulty: Difficulty;
+  avatarUrl: string;
 }
 
 export interface Achievement {
   id: string;
   title: string;
   description: string;
+}
+
+export interface Lobby {
+  id: string;
+  hostId: string;
+  hostName: string;
+  hostAvatarUrl: string;
+  level: Level;
+}
+
+export interface OnlineGameData {
+  board: Board;
+  level: Level;
+  players: { [id: string]: { name: string, piece: Player, avatarUrl: string } };
+  currentPlayerId: string;
 }

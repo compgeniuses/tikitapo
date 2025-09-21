@@ -7,9 +7,10 @@ interface SettingsScreenProps {
   onBack: () => void;
   currentSettings: Settings;
   onSettingsChange: (newSettings: Settings) => void;
+  onGoToAvatarCreation: () => void;
 }
 
-export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, currentSettings, onSettingsChange }) => {
+export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, currentSettings, onSettingsChange, onGoToAvatarCreation }) => {
   const [theme, setTheme] = useState<Theme>(THEMES.find(t => t.name === currentSettings.themeName) || THEMES[0]);
   const [playerNames, setPlayerNames] = useState<PlayerNames>(currentSettings.playerNames);
 
@@ -38,6 +39,24 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, currentS
             ))}
           </div>
         </div>
+
+        {/* Avatar Section */}
+        <div>
+          <label className={`block text-lg font-bold ${theme.accent1} mb-2`}>Your Avatar</label>
+          <div className="flex items-center gap-4 bg-gray-900/50 p-3 rounded-lg">
+            {currentSettings.avatarUrl ? (
+                <img src={currentSettings.avatarUrl} alt="Your Avatar" className="w-16 h-16 rounded-full bg-gray-700 object-cover" />
+            ) : (
+                <div className="w-16 h-16 rounded-full bg-gray-700 flex items-center justify-center">
+                    <span className="text-3xl">?</span>
+                </div>
+            )}
+            <button onClick={onGoToAvatarCreation} className={`px-4 py-2 ${theme.accent2Bg} hover:opacity-90 rounded-md font-bold transition-transform transform hover:scale-105`}>
+                Create / Change Avatar
+            </button>
+          </div>
+        </div>
+
 
         {/* Player Names */}
         <div>
