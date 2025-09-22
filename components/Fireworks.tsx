@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 
 const Firework: React.FC<{ style: React.CSSProperties }> = ({ style }) => {

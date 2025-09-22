@@ -387,7 +387,7 @@ const App: React.FC = () => {
       if (gameMode === GameMode.AI && currentMatchWinner === Player.X && profile) {
         setImageLoading(true);
         try {
-          const imageUrl = await geminiService.generateVictoryImage(profile);
+          const imageUrl = await geminiService.generateVictoryImage(profile, settings.avatarUrl);
           setGeneratedImage(imageUrl);
           setImageError(null);
         } catch (error) {
@@ -397,7 +397,7 @@ const App: React.FC = () => {
           setImageLoading(false);
         }
       }
-  }, [gameMode, difficulty, level, profile, matchScore, unlockAchievement]);
+  }, [gameMode, difficulty, level, profile, matchScore, unlockAchievement, settings.avatarUrl]);
 
   const computerMove = useCallback(async () => {
     if (gameMode === GameMode.TwoPlayer || gameMode === GameMode.Online) return;

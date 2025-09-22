@@ -30,25 +30,28 @@ const saveProgress = (progress: Progress) => {
 export const completeLevel = (difficulty: Difficulty, completedLevelNumber: number): Progress => {
     const progress = getProgress();
     const levelsInDifficulty = LEVELS_BY_DIFFICULTY[difficulty];
-    const isLastLevel = completedLevelNumber === levelsInDifficulty.length;
+    
+    const isLastLevelInDifficulty = completedLevelNumber >= levelsInDifficulty.length;
 
-    if (isLastLevel) {
-        // Completed the final level of the difficulty, so try to unlock the next one.
+    if (isLastLevelInDifficulty) {
+        // If the last level of a difficulty is beaten, we don't unlock a "next level"
+        // but this logic block ensures the next difficulty tier is available if it exists.
         const currentDifficultyIndex = DIFFICULTIES_ORDER.indexOf(difficulty);
         const isNotFinalDifficulty = currentDifficultyIndex < DIFFICULTIES_ORDER.length - 1;
 
         if (isNotFinalDifficulty) {
             const nextDifficulty = DIFFICULTIES_ORDER[currentDifficultyIndex + 1];
-            // Unlock level 1 of the next difficulty if it's not already unlocked.
+            // Unlocking means ensuring at least level 1 is available.
+            // This won't override if the player has already progressed further.
             if (progress[nextDifficulty] < 1) {
                 progress[nextDifficulty] = 1;
             }
         }
     } else {
-        // Not the last level, just unlock the next level in the current difficulty.
-        const nextLevelInDifficulty = completedLevelNumber + 1;
-        if (nextLevelInDifficulty > progress[difficulty]) {
-            progress[difficulty] = nextLevelInDifficulty;
+        // If not the last level, unlock the next level within the same difficulty.
+        const nextLevelNum = completedLevelNumber + 1;
+        if (progress[difficulty] < nextLevelNum) {
+            progress[difficulty] = nextLevelNum;
         }
     }
 
@@ -58,21 +61,22 @@ export const completeLevel = (difficulty: Difficulty, completedLevelNumber: numb
 
 export const getNextLevel = (difficulty: Difficulty, completedLevelNumber: number): Level | null => {
     const levelsForCurrentDifficulty = LEVELS_BY_DIFFICULTY[difficulty];
-    const currentLevelIndex = levelsForCurrentDifficulty.findIndex(l => l.level === completedLevelNumber);
+    const isLastLevel = completedLevelNumber >= levelsForCurrentDifficulty.length;
 
-    // Try to find the next level in the current difficulty
-    if (currentLevelIndex !== -1 && currentLevelIndex + 1 < levelsForCurrentDifficulty.length) {
-        return levelsForCurrentDifficulty[currentLevelIndex + 1];
+    // If it was the last level, try to find the first level of the next difficulty
+    if (isLastLevel) {
+        const currentDifficultyIndex = DIFFICULTIES_ORDER.indexOf(difficulty);
+        if (currentDifficultyIndex < DIFFICULTIES_ORDER.length - 1) {
+            const nextDifficulty = DIFFICULTIES_ORDER[currentDifficultyIndex + 1];
+            return LEVELS_BY_DIFFICULTY[nextDifficulty][0];
+        } else {
+            return null; // No more difficulties
+        }
     }
     
-    // If it was the last level, try to find the first level of the next difficulty
-    const currentDifficultyIndex = DIFFICULTIES_ORDER.indexOf(difficulty);
-    if (currentDifficultyIndex < DIFFICULTIES_ORDER.length - 1) {
-        const nextDifficulty = DIFFICULTIES_ORDER[currentDifficultyIndex + 1];
-        return LEVELS_BY_DIFFICULTY[nextDifficulty][0];
-    }
-
-    return null; // No more levels
+    // Otherwise, find the next level in the current difficulty
+    const nextLevelData = levelsForCurrentDifficulty.find(l => l.level === completedLevelNumber + 1);
+    return nextLevelData || null;
 }
 
 export const resetProgress = (): Progress => {

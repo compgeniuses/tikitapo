@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 export const IconX: React.FC<{ className?: string }> = ({ className = '' }) => (
