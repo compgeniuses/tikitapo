@@ -20,6 +20,8 @@ import { LoadingScreen } from './components/LoadingScreen';
 import * as gameService from './services/gameService';
 import * as audioService from './services/audioService';
 import * as geminiService from './services/geminiService';
+import * as unifiedAIService from './services/unifiedAIService';
+import * as aiProviderService from './services/aiProviderService';
 import * as statsService from './services/statsService';
 import * as progressService from './services/progressService';
 import * as settingsService from './services/settingsService';
@@ -76,6 +78,11 @@ const App: React.FC = () => {
   const [myPlayerPiece, setMyPlayerPiece] = useState<Player | null>(null);
 
   const moveInProgressRef = useRef(false);
+
+  // Initialize AI settings on app load
+  useEffect(() => {
+    aiProviderService.initializeAISettings();
+  }, []);
 
   const currentBackground = useMemo(() => {
     if (!theme.backgrounds || theme.backgrounds.length === 0) {
@@ -391,11 +398,22 @@ const App: React.FC = () => {
       if (gameMode === GameMode.AI && currentMatchWinner === Player.X && profile) {
         setImageLoading(true);
         try {
-          const imageUrl = await geminiService.generateVictoryImage(profile, settings.avatarUrl);
+          let imageUrl: string;
+          
+          // Try to use configured image provider first
+          const imageProvider = aiProviderService.getImageProvider();
+          if (imageProvider) {
+            const aiService = new unifiedAIService.UnifiedAIService(imageProvider);
+            imageUrl = await aiService.generateVictoryImage(profile, settings.avatarUrl);
+          } else {
+            // Fallback to Gemini
+            imageUrl = await geminiService.generateVictoryImage(profile, settings.avatarUrl);
+          }
+          
           setGeneratedImage(imageUrl);
           setImageError(null);
         } catch (error) {
-          console.error("Gemini API error:", error);
+          console.error("Image generation error:", error);
           setImageError("Failed to generate victory image. Please try again later.");
         } finally {
           setImageLoading(false);
@@ -435,7 +453,16 @@ const App: React.FC = () => {
       if (gameMode === GameMode.AI) {
         setIsAiThinkingComment(true);
         try {
-            const comment = await geminiService.getAIPersonalityComment(newBoard, difficulty, move);
+            // Try to use configured AI agent first, fallback to Gemini
+            const aiService = unifiedAIService.createActiveAIService();
+            let comment: string;
+            
+            if (aiService.isReady()) {
+                comment = await aiService.getAIComment(newBoard, difficulty, move);
+            } else {
+                // Fallback to Gemini if no custom agent configured
+                comment = await geminiService.getAIPersonalityComment(newBoard, difficulty, move);
+            }
             setAiMessage(comment);
         } catch (error) {
             console.error("Failed to get AI comment:", error);

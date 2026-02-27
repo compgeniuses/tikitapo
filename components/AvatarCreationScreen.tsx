@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import * as geminiService from '../services/geminiService';
+import * as unifiedAIService from '../services/unifiedAIService';
+import * as aiProviderService from '../services/aiProviderService';
 import type { Theme } from '../themes';
 
 interface AvatarCreationScreenProps {
@@ -24,7 +26,18 @@ export const AvatarCreationScreen: React.FC<AvatarCreationScreenProps> = ({ onBa
     setImageUrl(null);
 
     try {
-      const url = await geminiService.generateAvatar(prompt);
+      let url: string;
+      
+      // Try to use configured image provider first
+      const imageProvider = aiProviderService.getImageProvider();
+      if (imageProvider) {
+        const aiService = new unifiedAIService.UnifiedAIService(imageProvider);
+        url = await aiService.generateAvatar(prompt);
+      } else {
+        // Fallback to Gemini
+        url = await geminiService.generateAvatar(prompt);
+      }
+      
       setImageUrl(url);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred.');

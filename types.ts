@@ -103,6 +103,39 @@ export interface Settings {
   lastPlayedMode: GameMode;
   lastPlayedDifficulty: Difficulty;
   avatarUrl: string;
+  aiProviders: AIProvider[];
+  aiAgents: AIAgent[];
+  activeAgentId: string | null;
+  imageProviderId: string | null;
+}
+
+export enum AIProviderType {
+  OpenAI = 'openai',
+  Gemini = 'gemini',
+  Anthropic = 'anthropic',
+  Custom = 'custom',
+}
+
+export interface AIProvider {
+  id: string;
+  name: string;
+  type: AIProviderType;
+  apiKey: string;
+  baseUrl?: string;
+  models: string[];
+  isDefault?: boolean;
+}
+
+export interface AIAgent {
+  id: string;
+  name: string;
+  providerId: string;
+  model: string;
+  systemPrompt: string;
+  supportsVision: boolean;
+  isImageGeneration: boolean;
+  difficulty: Difficulty;
+  personality: 'friendly' | 'competitive' | 'analytical' | 'arrogant';
 }
 
 export interface Achievement {
