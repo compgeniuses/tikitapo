@@ -22,3 +22,19 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Mobile Build Files
+android/release-key.keystore
+android/key.properties
+*.apk
+*.aab
+*.ipa
+
+# Capacitor
+ios/
+!ios/.gitkeep
+
+# Build outputs
+tikitapo-debug.apk
+tikitapo-release.apk
+tikitapo.aab

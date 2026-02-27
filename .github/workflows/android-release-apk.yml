@@ -1,0 +1,130 @@
+name: Build Android Release APK
+
+on:
+  push:
+    branches: [ main, master ]
+    tags:
+      - 'v*'
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 1.0.0)'
+        required: false
+        default: ''
+        type: string
+
+env:
+  NODE_VERSION: '18'
+  JAVA_VERSION: '17'
+
+jobs:
+  build-release-apk:
+    name: Build Release APK
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+        
+    - name: Cache Gradle packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+          
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build web application
+      run: npm run build
+      
+    - name: Sync with Capacitor
+      run: npx cap sync android
+      
+    - name: Setup signing
+      env:
+        ENCODED_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+      run: |
+        if [ -z "$ENCODED_KEYSTORE" ]; then
+          echo "Warning: RELEASE_KEYSTORE_BASE64 secret not set. Building unsigned APK."
+          echo "To sign APKs, add your keystore as a base64 encoded secret:"
+          echo "1. Convert keystore to base64: base64 -w 0 android/release-key.keystore"
+          echo "2. Go to GitHub repo → Settings → Secrets → New repository secret"
+          echo "3. Name: RELEASE_KEYSTORE_BASE64, Value: [base64 string]"
+        else
+          echo "$ENCODED_KEYSTORE" | base64 -d > android/release-key.keystore
+          echo "Keystore decoded successfully"
+        fi
+        
+    - name: Create key.properties
+      env:
+        STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      run: |
+        if [ -n "$STORE_PASSWORD" ] && [ -n "$KEY_PASSWORD" ]; then
+          cat > android/key.properties << EOF
+        storePassword=$STORE_PASSWORD
+        keyPassword=$KEY_PASSWORD
+        keyAlias=tikitapo
+        storeFile=release-key.keystore
+        EOF
+          echo "key.properties created with signing config"
+        else
+          echo "Warning: Signing passwords not set in secrets"
+        fi
+        
+    - name: Grant execute permission for gradlew
+      run: chmod +x android/gradlew
+      
+    - name: Build Release APK
+      working-directory: ./android
+      run: ./gradlew assembleRelease --stacktrace
+      
+    - name: Rename APK with version
+      run: |
+        VERSION="${{ github.event.inputs.version }}"
+        if [ -z "$VERSION" ]; then
+          VERSION="${GITHUB_REF_NAME}"
+        fi
+        if [ -z "$VERSION" ]; then
+          VERSION=$(date +%Y%m%d-%H%M%S)
+        fi
+        cp android/app/build/outputs/apk/release/app-release.apk "tikitapo-release-${VERSION}.apk"
+        echo "APK renamed to: tikitapo-release-${VERSION}.apk"
+        
+    - name: Upload Release APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: tikitapo-release-apk
+        path: tikitapo-release-*.apk
+        retention-days: 90
+        
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: tikitapo-release-*.apk
+        generate_release_notes: true
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

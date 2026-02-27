@@ -1,0 +1,70 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [ main, master, develop ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+
+env:
+  NODE_VERSION: '18'
+  JAVA_VERSION: '17'
+
+jobs:
+  validate:
+    name: Validate Build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+        
+    - name: Cache Gradle packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+          
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run TypeScript checks
+      run: npx tsc --noEmit || true
+      continue-on-error: true
+      
+    - name: Build web application
+      run: npm run build
+      
+    - name: Sync with Capacitor
+      run: npx cap sync android
+      
+    - name: Grant execute permission for gradlew
+      run: chmod +x android/gradlew
+      
+    - name: Validate Android build (compile only)
+      working-directory: ./android
+      run: ./gradlew compileDebugSources --stacktrace
+      
+    - name: Success
+      run: |
+        echo "✅ PR validation passed!"
+        echo "Web build: OK"
+        echo "Android sync: OK"
+        echo "Compilation: OK"

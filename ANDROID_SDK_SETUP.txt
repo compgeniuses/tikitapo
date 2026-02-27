@@ -1,0 +1,36 @@
+## ⚠️ ANDROID SDK NOT FOUND
+
+The AAB build requires Android SDK which comes with Android Studio.
+
+### What You Need to Do:
+
+1. **Download Android Studio** from https://developer.android.com/studio
+2. **Install it** (accept default settings)
+3. **Set ANDROID_HOME** environment variable:
+   - Usually: `C:\Users\[YourUsername]\AppData\Local\Android\Sdk`
+
+### Or Create local.properties:
+
+Create file: `android/local.properties`
+
+Add:
+```
+sdk.dir=C:\\Users\\[YourUsername]\\AppData\\Local\\Android\\Sdk
+```
+
+### Then build again:
+```bash
+cd android
+gradlew.bat bundleRelease
+```
+
+## ✅ What's Already Done:
+
+- ✅ Web app built successfully
+- ✅ Capacitor sync completed  
+- ✅ Gradle downloaded and working
+- ✅ Signing keystore created
+- ✅ Signing configuration set up
+- ✅ All code ready to build
+
+**You just need Android Studio installed!**

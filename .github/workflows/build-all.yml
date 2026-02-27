@@ -1,0 +1,172 @@
+name: Build All Android Artifacts
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'What to build?'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - debug-apk
+          - release-apk
+          - aab
+      create_release:
+        description: 'Create GitHub release?'
+        required: false
+        default: false
+        type: boolean
+      release_tag:
+        description: 'Release tag (e.g., v1.0.0)'
+        required: false
+        default: ''
+        type: string
+
+env:
+  NODE_VERSION: '18'
+  JAVA_VERSION: '17'
+
+jobs:
+  build-all:
+    name: Build Android Artifacts
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+        
+    - name: Cache Gradle packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+          
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build web application
+      run: npm run build
+      
+    - name: Sync with Capacitor
+      run: npx cap sync android
+      
+    - name: Setup signing (for release builds)
+      env:
+        ENCODED_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+      run: |
+        if [ -n "$ENCODED_KEYSTORE" ]; then
+          echo "$ENCODED_KEYSTORE" | base64 -d > android/release-key.keystore
+          echo "✅ Keystore decoded"
+        else
+          echo "⚠️  Keystore secret not set - release builds will be unsigned"
+        fi
+        
+    - name: Create key.properties
+      env:
+        STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      run: |
+        if [ -n "$STORE_PASSWORD" ] && [ -n "$KEY_PASSWORD" ]; then
+          cat > android/key.properties << EOF
+        storePassword=$STORE_PASSWORD
+        keyPassword=$KEY_PASSWORD
+        keyAlias=tikitapo
+        storeFile=release-key.keystore
+        EOF
+          echo "✅ Signing config created"
+        else
+          echo "⚠️  Signing passwords not set"
+        fi
+        
+    - name: Grant execute permission for gradlew
+      run: chmod +x android/gradlew
+      
+    - name: Build Debug APK
+      if: github.event.inputs.build_type == 'all' || github.event.inputs.build_type == 'debug-apk'
+      working-directory: ./android
+      run: ./gradlew assembleDebug --stacktrace
+      
+    - name: Build Release APK
+      if: github.event.inputs.build_type == 'all' || github.event.inputs.build_type == 'release-apk'
+      working-directory: ./android
+      run: ./gradlew assembleRelease --stacktrace
+      continue-on-error: true
+      
+    - name: Build AAB Bundle
+      if: github.event.inputs.build_type == 'all' || github.event.inputs.build_type == 'aab'
+      working-directory: ./android
+      run: ./gradlew bundleRelease --stacktrace
+      continue-on-error: true
+      
+    - name: Prepare artifacts
+      run: |
+        mkdir -p artifacts
+        VERSION="${{ github.event.inputs.release_tag }}"
+        if [ -z "$VERSION" ]; then
+          VERSION=$(date +%Y%m%d-%H%M%S)
+        fi
+        
+        if [ -f "android/app/build/outputs/apk/debug/app-debug.apk" ]; then
+          cp android/app/build/outputs/apk/debug/app-debug.apk "artifacts/tikitapo-debug-${VERSION}.apk"
+        fi
+        
+        if [ -f "android/app/build/outputs/apk/release/app-release.apk" ]; then
+          cp android/app/build/outputs/apk/release/app-release.apk "artifacts/tikitapo-release-${VERSION}.apk"
+        fi
+        
+        if [ -f "android/app/build/outputs/bundle/release/app-release.aab" ]; then
+          cp android/app/build/outputs/bundle/release/app-release.aab "artifacts/tikitapo-${VERSION}.aab"
+        fi
+        
+        ls -lh artifacts/
+        
+    - name: Upload All Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: tikitapo-all-artifacts
+        path: artifacts/*
+        retention-days: 90
+        
+    - name: Create GitHub Release
+      if: github.event.inputs.create_release == 'true' && github.event.inputs.release_tag != ''
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.event.inputs.release_tag }}
+        files: artifacts/*
+        generate_release_notes: true
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      continue-on-error: true
+      
+    - name: Build Summary
+      run: |
+        echo ""
+        echo "╔═══════════════════════════════════════════════════════════╗"
+        echo "║  🎉 Build Complete!                                       ║"
+        echo "╚═══════════════════════════════════════════════════════════╝"
+        echo ""
+        echo "📦 Artifacts created:"
+        ls -lh artifacts/ 2>/dev/null || echo "No artifacts found"
+        echo ""
+        echo "📥 Download from: Actions → This workflow run → Artifacts"
+        echo ""

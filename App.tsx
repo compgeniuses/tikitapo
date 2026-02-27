@@ -16,6 +16,7 @@ import { AchievementsScreen } from './components/AchievementsScreen';
 import { AchievementToast } from './components/AchievementToast';
 import { OnlineLobbyScreen } from './components/OnlineLobbyScreen';
 import { AvatarCreationScreen } from './components/AvatarCreationScreen';
+import { LoadingScreen } from './components/LoadingScreen';
 import * as gameService from './services/gameService';
 import * as audioService from './services/audioService';
 import * as geminiService from './services/geminiService';
@@ -65,6 +66,9 @@ const App: React.FC = () => {
   const [isDifficultyTransition, setIsDifficultyTransition] = useState(false);
   
   const [newlyUnlockedAchievement, setNewlyUnlockedAchievement] = useState<Achievement | null>(null);
+  
+  // Loading state
+  const [isLoading, setIsLoading] = useState(true);
   
   // Online state
   const [isConnected, setIsConnected] = useState(false);
@@ -506,6 +510,10 @@ const App: React.FC = () => {
     }
   };
 
+  const handleLoadingComplete = () => {
+    setIsLoading(false);
+  };
+
   const renderContent = () => {
     const isTieBreaker = matchScore[Player.X] === WINS_PER_LEVEL_MATCH - 1 &&
                          matchScore[Player.O] === WINS_PER_LEVEL_MATCH - 1 &&
@@ -612,6 +620,17 @@ const App: React.FC = () => {
         return null;
     }
   };
+
+  // Show loading screen initially
+  if (isLoading) {
+    return (
+      <LoadingScreen 
+        onLoadingComplete={handleLoadingComplete}
+        themeName={settings.themeName}
+        minDuration={3000}
+      />
+    );
+  }
 
   return (
     <main className={`min-h-screen text-white flex items-center justify-center p-4 transition-colors duration-500 ${currentBackground}`}>
