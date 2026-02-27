@@ -1,12 +1,8 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
-
 # tikiTaP0 - Connect. Compete. Conquer.
 
 A modern, feature-rich Connect-N strategy game built with React and powered by Genius.africa.
 
-[![Web](https://img.shields.io/badge/Web-Ready-brightgreen)](https://ai.studio/apps/drive/12ARZp-B5NuWwVcUJkjF9jzZUUr33Zbys)
+[![Web](https://img.shields.io/badge/Web-Ready-brightgreen)](https://tikitapo.genius.africa)
 [![Android](https://img.shields.io/badge/Android-APK%2FAAB-blue)](./MOBILE_BUILD_GUIDE.md)
 [![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-blueviolet)](./.github/workflows/README.md)
 [![Platform](https://img.shields.io/badge/Platform-Capacitor-orange)](https://capacitorjs.com/)
@@ -16,7 +12,7 @@ A modern, feature-rich Connect-N strategy game built with React and powered by G
 
 | Platform | Status | Action |
 |----------|--------|--------|
-| Web | ✅ Ready | [Play Now](https://ai.studio/apps/drive/12ARZp-B5NuWwVcUJkjF9jzZUUr33Zbys) |
+| Web | ✅ Ready | [Play Now](https://tikitapo.genius.africa) |
 | Android APK | 🔄 Auto-build | [Download from Actions](https://github.com/compgeniuses/tikitapo/actions) |
 | Android AAB | 🔄 Auto-build | [Download from Actions](https://github.com/compgeniuses/tikitapo/actions) |
 | Play Store | 📦 Ready for upload | Build AAB → Upload |
@@ -166,11 +162,11 @@ Get your API key from: https://ai.google.dev/
 ## Requirements
 
 ### Web
-- Node.js 18+
+- Node.js 22+
 - Modern web browser
 
 ### Mobile
-- Node.js 18+
+- Node.js 22+
 - Android Studio (for building APK/AAB)
 - JDK 17+
 - Android SDK
@@ -213,5 +209,3 @@ MIT License - See LICENSE file for details
 
 **Developed by [Genius.africa](https://genius.africa)**  
 *Innovation • Technology • Excellence*
-
-View the app in AI Studio: https://ai.studio/apps/drive/12ARZp-B5NuWwVcUJkjF9jzZUUr33Zbys
