@@ -26,6 +26,7 @@ export enum GameState {
   Achievements = 'achievements',
   OnlineLobby = 'onlineLobby',
   AvatarCreation = 'avatarCreation',
+  Leaderboard = 'leaderboard',
 }
 
 export enum GameMode {
