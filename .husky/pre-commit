@@ -1,0 +1,15 @@
+echo "Running pre-commit checks..."
+
+# Check TypeScript types
+echo "Checking types..."
+npx tsc --noEmit
+
+# Run linting
+echo "Running linting..."
+npm run lint || { echo "Linting failed"; exit 1; }
+
+# Run tests
+echo "Running tests..."
+npm run test:run || { echo "Tests failed"; exit 1; }
+
+echo "All pre-commit checks passed!"
