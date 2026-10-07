@@ -22,7 +22,7 @@ A modern, feature-rich Connect-N strategy game built with React and powered by G
 - **Multiple Game Modes**: vs CPU, vs AI, 2 Player, Online Multiplayer
 - **Difficulty Levels**: Simple, Hard, Pro with structured progression
 - **Immersive Themes**: Sci-Fi, Jungle, Ocean with animated backgrounds
-- **AI Integration**: Google Gemini API for personalized avatars and victory images
+- **AI Integration**: TypeSafe Jev picks the computer's moves and reads the board for in-character reactions; Nano Banana 2 (`gemini-3.1-flash-image`) generates avatars and victory images. Set `VITE_JEV_API_KEY` / `VITE_GEMINI_API_KEY` (see `.env.example`) or enter keys in AI Settings. Without keys the game falls back to its built-in engine.
 - **Real-time Multiplayer**: Socket.IO powered online matches
 - **Mobile Optimized**: Native Android APK/AAB builds via Capacitor
 

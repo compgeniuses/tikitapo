@@ -157,7 +157,7 @@ export const MenuScreen: React.FC<MenuScreenProps> = ({
           </div>
           {mode === GameMode.AI && (
             <p className="text-center text-xs text-gray-400 mt-1">
-              (Win to get a Gemini-generated image!)
+              (Win to get an AI-generated image!)
             </p>
           )}
         </div>

@@ -1,171 +1,78 @@
-import { GoogleGenAI, Modality } from "@google/genai";
-import { Profile, Board, Difficulty, CellState, Move } from '../types';
+import { GoogleGenAI, Modality } from '@google/genai';
+import { Profile } from '../types';
+import { AIProviderType } from '../types';
+import * as aiProviderService from './aiProviderService';
 
-if (!process.env.API_KEY) {
-  // In a real app, this would be handled by the build process or environment.
-  // For this context, we'll alert the developer if the key is missing.
-  console.warn("API_KEY environment variable not set. Gemini API calls will fail.");
-}
+// Image generation uses Nano Banana 2 (Gemini 3.1 Flash Image). Gameplay decisions live in
+// jevService/aiEngine; Gemini is only used for pictures.
+export const IMAGE_MODEL = 'gemini-3.1-flash-image';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+// Created lazily so a missing key never breaks app start-up.
+let client: GoogleGenAI | null = null;
+let clientKey = '';
+
+const getClient = (): GoogleGenAI => {
+  const apiKey = aiProviderService.getApiKeyForType(AIProviderType.Gemini);
+  if (!apiKey) {
+    throw new Error('No Gemini API key configured. Add one in AI Settings or set VITE_GEMINI_API_KEY.');
+  }
+  if (!client || clientKey !== apiKey) {
+    client = new GoogleGenAI({ apiKey });
+    clientKey = apiKey;
+  }
+  return client;
+};
 
 const getPromptForProfile = (profile: Profile): string => {
-    switch (profile) {
-        case Profile.Man:
-            return "An artistic portrait of a beautiful and powerful female fantasy sorceress, celebrating a great victory. She is depicted in elegant, tasteful, non-revealing robes with a magical aura. The style is high-quality digital art, with cinematic lighting and intricate details, emphasizing beauty and power. SFW.";
-        case Profile.Woman:
-            return "An artistic portrait of a handsome and heroic male warrior with a strong physique, depicted in ornate, family-friendly armor after a great victory. The style is high-quality digital art, with Rembrandt lighting and intricate details, emphasizing beauty and strength. SFW.";
-        case Profile.Child:
-            return "A curious child discovering a glowing, magical forest, storybook illustration style, vibrant colors, whimsical, sense of wonder, detailed fantasy landscape. SFW.";
-        default:
-            return "A beautiful, award-winning photograph of a celebratory landscape after a great victory.";
+  switch (profile) {
+    case Profile.Man:
+      return 'An artistic portrait of a beautiful and powerful female fantasy sorceress, celebrating a great victory. She is depicted in elegant, tasteful, non-revealing robes with a magical aura. The style is high-quality digital art, with cinematic lighting and intricate details, emphasizing beauty and power. SFW.';
+    case Profile.Woman:
+      return 'An artistic portrait of a handsome and heroic male warrior with a strong physique, depicted in ornate, family-friendly armor after a great victory. The style is high-quality digital art, with Rembrandt lighting and intricate details, emphasizing beauty and strength. SFW.';
+    case Profile.Child:
+      return 'A curious child discovering a glowing, magical forest, storybook illustration style, vibrant colors, whimsical, sense of wonder, detailed fantasy landscape. SFW.';
+    default:
+      return 'A beautiful, award-winning photograph of a celebratory landscape after a great victory.';
+  }
+};
+
+type Part = { text: string } | { inlineData: { mimeType: string; data: string } };
+
+const generateImage = async (parts: Part[]): Promise<string> => {
+  const response = await getClient().models.generateContent({
+    model: IMAGE_MODEL,
+    contents: [{ role: 'user', parts }],
+    config: { responseModalities: [Modality.IMAGE, Modality.TEXT] },
+  });
+  for (const part of response.candidates?.[0]?.content?.parts ?? []) {
+    if (part.inlineData?.data) {
+      return `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
     }
+  }
+  throw new Error('The image model did not return an image.');
 };
 
 export const generateVictoryImage = async (profile: Profile, playerAvatarUrl?: string): Promise<string> => {
-    // 1. Try to use nano-banana to edit the player's avatar if it exists
-    if (playerAvatarUrl) {
-        try {
-            const match = playerAvatarUrl.match(/^data:(image\/.*?);base64,(.*)$/);
-            if (!match) {
-                console.warn("Malformed avatar URL, falling back to Imagen for victory image.");
-            } else {
-                const [, mimeType, base64Data] = match;
-
-                const imagePart = {
-                    inlineData: { mimeType, data: base64Data },
-                };
-                const textPart = {
-                    text: 'Make this character look like a triumphant, heroic warrior celebrating a great victory. Add epic, cinematic lighting and a dynamic, celebratory background. Ensure the character is family-friendly. SFW.',
-                };
-
-                const response = await ai.models.generateContent({
-                    model: 'gemini-2.5-flash-image-preview',
-                    contents: { parts: [imagePart, textPart] },
-                    config: {
-                        responseModalities: [Modality.IMAGE, Modality.TEXT],
-                    },
-                });
-
-                for (const part of response.candidates[0].content.parts) {
-                    if (part.inlineData) {
-                        const base64ImageBytes: string = part.inlineData.data;
-                        const imageMimeType = part.inlineData.mimeType;
-                        return `data:${imageMimeType};base64,${base64ImageBytes}`;
-                    }
-                }
-                console.warn("Nano-banana model did not return an image, falling back.");
-            }
-        } catch (error) {
-            console.error("Error using nano-banana for victory image, falling back to Imagen:", error);
-            // Fall through to the Imagen logic
-        }
-    }
-
-    // 2. Fallback to Imagen if no avatar or if nano-banana fails
-    const prompt = getPromptForProfile(profile);
+  // Edit the player's avatar into a victory scene when we have one, otherwise draw from the profile prompt.
+  const match = playerAvatarUrl?.match(/^data:(image\/.*?);base64,(.*)$/);
+  if (match) {
     try {
-        const response = await ai.models.generateImages({
-            model: 'imagen-4.0-generate-001',
-            prompt: prompt,
-            config: {
-                numberOfImages: 1,
-                outputMimeType: 'image/jpeg',
-                aspectRatio: '1:1',
-            },
-        });
-
-        if (response.generatedImages?.[0]?.image.imageBytes) {
-            const base64ImageBytes: string = response.generatedImages[0].image.imageBytes;
-            return `data:image/jpeg;base64,${base64ImageBytes}`;
-        } else {
-            throw new Error("No image was generated by Imagen API.");
-        }
+      return await generateImage([
+        { inlineData: { mimeType: match[1], data: match[2] } },
+        {
+          text: 'Make this character look like a triumphant, heroic warrior celebrating a great victory. Add epic, cinematic lighting and a dynamic, celebratory background. Ensure the character is family-friendly. SFW.',
+        },
+      ]);
     } catch (error) {
-        console.error("Error generating image with Gemini Imagen:", error);
-        throw new Error("Failed to generate image from Gemini API.");
+      console.error('Avatar-based victory image failed, falling back to profile prompt:', error);
     }
+  }
+  return generateImage([{ text: getPromptForProfile(profile) }]);
 };
 
-export const generateAvatar = async (prompt: string): Promise<string> => {
-    const fullPrompt = `Create a unique, SFW, portrait-style avatar based on the following description: "${prompt}". The style should be vibrant digital art, suitable for a profile picture. No text, no words.`;
-    
-    try {
-        const response = await ai.models.generateImages({
-            model: 'imagen-4.0-generate-001',
-            prompt: fullPrompt,
-            config: {
-                numberOfImages: 1,
-                outputMimeType: 'image/jpeg',
-                aspectRatio: '1:1',
-            },
-        });
-
-        if (response.generatedImages?.[0]?.image.imageBytes) {
-            const base64ImageBytes: string = response.generatedImages[0].image.imageBytes;
-            return `data:image/jpeg;base64,${base64ImageBytes}`;
-        } else {
-            throw new Error("No avatar image was generated by the API.");
-        }
-    } catch (error) {
-        console.error("Error generating avatar with Gemini:", error);
-        throw new Error("Failed to generate avatar from Gemini API.");
-    }
-};
-
-const getPersonalitySystemInstruction = (difficulty: Difficulty): string => {
-    switch (difficulty) {
-        case Difficulty.Simple:
-            return "You are a friendly and encouraging AI opponent in a Connect-N game. You are playing as 'O'. Be cheerful and a bit goofy. Keep your comments very short.";
-        case Difficulty.Hard:
-            return "You are a confident and strategic AI opponent in a Connect-N game. You are playing as 'O'. Acknowledge the human's skill but remain certain of your victory. Keep your comments short and witty.";
-        case Difficulty.Pro:
-            return "You are a cold, calculating, and arrogant grandmaster AI opponent in a Connect-N game. You are playing as 'O'. Your comments should be dismissive, analytical, and short, as if the human is a novice.";
-        default:
-            return "You are an AI opponent in a Connect-N game. Keep your comments short.";
-    }
-};
-
-const formatBoardForPrompt = (board: Board): string => {
-    return board.map(row => 
-        row.map(cell => {
-            switch(cell) {
-                case CellState.X: return 'X';
-                case CellState.O: return 'O';
-                case CellState.Obstacle: return '#';
-                default: return '.';
-            }
-        }).join(' ')
-    ).join('\n');
-};
-
-export const getAIPersonalityComment = async (board: Board, difficulty: Difficulty, lastMove: Move): Promise<string> => {
-    const systemInstruction = getPersonalitySystemInstruction(difficulty);
-    const boardString = formatBoardForPrompt(board);
-
-    const prompt = `The current board state is:\n${boardString}\n\nI (O) just made a move at row ${lastMove.row}, column ${lastMove.col}. What is a short, in-character taunt or comment I can say to the human player (X)? Respond with only the comment, without quotes, and in 15 words or less.`;
-
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: {
-                systemInstruction: systemInstruction,
-                temperature: 0.9,
-                maxOutputTokens: 50,
-            }
-        });
-        
-        const text = response.text;
-        if (text) {
-            return text.trim().replace(/"/g, '');
-        }
-
-        console.warn("Gemini comment generation returned no text. Full response:", response);
-        return "...";
-
-    } catch (error) {
-        console.error("Error generating AI comment with Gemini:", error);
-        return "Hmm...";
-    }
-};
+export const generateAvatar = async (prompt: string): Promise<string> =>
+  generateImage([
+    {
+      text: `Create a unique, SFW, portrait-style avatar based on the following description: "${prompt}". The style should be vibrant digital art, suitable for a profile picture. No text, no words.`,
+    },
+  ]);

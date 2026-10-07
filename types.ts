@@ -115,6 +115,7 @@ export interface Settings {
 }
 
 export enum AIProviderType {
+  Jev = 'jev',
   OpenAI = 'openai',
   Gemini = 'gemini',
   Anthropic = 'anthropic',

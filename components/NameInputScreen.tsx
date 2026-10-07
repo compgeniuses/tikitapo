@@ -22,7 +22,7 @@ export const NameInputScreen: React.FC<NameInputScreenProps> = ({ gameMode, onSt
     if (gameMode === GameMode.TwoPlayer) {
       playerOName = nameO.trim() || 'Player 2';
     } else if (gameMode === GameMode.AI) {
-      playerOName = 'Gemini AI';
+      playerOName = 'Jev AI';
     } else {
       playerOName = 'CPU';
     }

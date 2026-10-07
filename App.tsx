@@ -38,6 +38,8 @@ import { LeaderboardScreen } from './components/LeaderboardScreen';
 import * as gameService from './services/gameService';
 import * as audioService from './services/audioService';
 import * as geminiService from './services/geminiService';
+import * as jevService from './services/jevService';
+import * as aiEngine from './services/aiEngine';
 import * as unifiedAIService from './services/unifiedAIService';
 import * as aiProviderService from './services/aiProviderService';
 import * as statsService from './services/statsService';
@@ -280,7 +282,7 @@ const App: React.FC = () => {
     setLevel(selectedLevel);
 
     let p2Name = settings.playerNames[Player.O];
-    if (mode === GameMode.AI) p2Name = 'Gemini AI';
+    if (mode === GameMode.AI) p2Name = 'Jev AI';
     else if (mode === GameMode.Offline) p2Name = 'CPU';
     setPlayerNamesForGame({
       [Player.X]: settings.playerNames[Player.X],
@@ -470,7 +472,7 @@ const App: React.FC = () => {
       await new Promise((resolve) => setTimeout(resolve, 300));
     }
 
-    const move = gameService.getComputerMove(board, Player.O, Player.X, level, matchScore);
+    const move = await aiEngine.pickMove(board, level, matchScore, gameMode === GameMode.AI);
 
     setIsAiThinkingMove(false);
 
@@ -500,7 +502,7 @@ const App: React.FC = () => {
             comment = await aiService.getAIComment(newBoard, difficulty, move);
           } else {
             // Fallback to Gemini if no custom agent configured
-            comment = await geminiService.getAIPersonalityComment(newBoard, difficulty, move);
+            comment = await jevService.getAIPersonalityComment(newBoard, difficulty, move);
           }
           setAiMessage(comment);
         } catch (error) {

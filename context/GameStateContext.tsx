@@ -34,6 +34,8 @@ import * as audioService from '../services/audioService';
 import * as aiProviderService from '../services/aiProviderService';
 import * as onlineService from '../services/onlineService';
 import * as geminiService from '../services/geminiService';
+import * as jevService from '../services/jevService';
+import * as aiEngine from '../services/aiEngine';
 import * as unifiedAIService from '../services/unifiedAIService';
 import { THEMES } from '../themes';
 import type { Theme } from '../themes';
@@ -423,7 +425,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
       await new Promise((resolve) => setTimeout(resolve, 300));
     }
 
-    const move = gameService.getComputerMove(board, Player.O, Player.X, level, matchScore);
+    const move = await aiEngine.pickMove(board, level, matchScore, gameMode === GameMode.AI);
     setIsAiThinkingMove(false);
 
     if (move) {
@@ -452,7 +454,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
           if (aiService.isReady()) {
             comment = await aiService.getAIComment(newBoard, difficulty, move);
           } else {
-            comment = await geminiService.getAIPersonalityComment(newBoard, difficulty, move);
+            comment = await jevService.getAIPersonalityComment(newBoard, difficulty, move);
           }
           setAiMessage(comment);
         } catch (error) {

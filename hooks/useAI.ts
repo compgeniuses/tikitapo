@@ -1,6 +1,8 @@
 import { useCallback } from 'react';
 import { Board, Difficulty, Move, Profile, AIProvider, AIAgent } from '../types';
 import * as geminiService from '../services/geminiService';
+import * as jevService from '../services/jevService';
+import * as aiEngine from '../services/aiEngine';
 import * as unifiedAIService from '../services/unifiedAIService';
 import * as aiProviderService from '../services/aiProviderService';
 
@@ -19,7 +21,7 @@ export const useAI = (_props?: UseAIProps) => {
         }
 
         // Fallback to Gemini
-        return await geminiService.getAIPersonalityComment(board, difficulty, lastMove);
+        return await jevService.getAIPersonalityComment(board, difficulty, lastMove);
       } catch (error) {
         console.error('Failed to get AI comment:', error);
         return 'Hmm...';

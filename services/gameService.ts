@@ -307,3 +307,19 @@ export const generateAgeCheckQuestion = (): { a: number, b: number } => {
     const b = Math.floor(Math.random() * 9) + 2; // 2-10
     return { a, b };
 };
+// Immediate win (for the AI) or block (of the human), if one exists.
+export const getForcedMove = (board: Board, aiPlayer: Player, humanPlayer: Player, winCondition: number): Move | null =>
+    findWinningOrBlockingMove(board, aiPlayer, winCondition) || findWinningOrBlockingMove(board, humanPlayer, winCondition);
+
+// Top-k moves by 1-ply heuristic score, best first. Used to give an external decision model a short list.
+export const getCandidateMoves = (board: Board, aiPlayer: Player, humanPlayer: Player, winCondition: number, k: number): Move[] => {
+    return getValidMoves(board)
+        .map(move => {
+            const tempBoard = board.map(r => [...r]);
+            tempBoard[move.row][move.col] = aiPlayer as unknown as CellState;
+            return { move, score: evaluateBoard(tempBoard, aiPlayer, humanPlayer, winCondition) };
+        })
+        .sort((a, b) => b.score - a.score)
+        .slice(0, k)
+        .map(entry => entry.move);
+};
