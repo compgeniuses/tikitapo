@@ -8,6 +8,13 @@ const IMAGE_PROVIDER_KEY = 'tikitapo_image_provider';
 // Default providers configuration
 export const DEFAULT_PROVIDERS: Omit<AIProvider, 'id' | 'apiKey'>[] = [
   {
+    name: 'TypeSafe Jev',
+    type: AIProviderType.Jev,
+    baseUrl: 'https://api.typesafe.ai/v1',
+    models: ['jev-latest'],
+    isDefault: true,
+  },
+  {
     name: 'OpenAI',
     type: AIProviderType.OpenAI,
     baseUrl: 'https://api.openai.com/v1',
@@ -18,7 +25,7 @@ export const DEFAULT_PROVIDERS: Omit<AIProvider, 'id' | 'apiKey'>[] = [
     name: 'Google Gemini',
     type: AIProviderType.Gemini,
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-    models: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-1.5-pro'],
+    models: ['gemini-3.1-flash-image', 'gemini-2.5-flash', 'gemini-2.5-pro'],
     isDefault: true,
   },
   {
@@ -75,6 +82,12 @@ const generateId = (): string => {
 export const initializeDefaultProviders = (): AIProvider[] => {
   const existingProviders = getProviders();
   if (existingProviders.length > 0) {
+    // Installs created before Jev support get a Jev provider added.
+    if (!existingProviders.some(p => p.type === AIProviderType.Jev)) {
+      const jev = DEFAULT_PROVIDERS.find(p => p.type === AIProviderType.Jev)!;
+      existingProviders.unshift({ ...jev, id: generateId(), apiKey: '' });
+      saveProviders(existingProviders);
+    }
     return existingProviders;
   }
 
@@ -288,8 +301,10 @@ export const getAvailableModels = (type: AIProviderType): string[] => {
   switch (type) {
     case AIProviderType.OpenAI:
       return ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo', 'o1-preview', 'o1-mini'];
+    case AIProviderType.Jev:
+      return ['jev-latest'];
     case AIProviderType.Gemini:
-      return ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-2.0-pro', 'gemini-1.5-pro', 'gemini-1.5-flash'];
+      return ['gemini-3.1-flash-image', 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-2.0-pro', 'gemini-1.5-pro', 'gemini-1.5-flash'];
     case AIProviderType.Anthropic:
       return ['claude-3-5-sonnet-20241022', 'claude-3-opus-20240229', 'claude-3-5-haiku-20241022', 'claude-3-haiku-20240307'];
     case AIProviderType.Custom:
@@ -310,6 +325,7 @@ export const validateApiKey = (type: AIProviderType, key: string): boolean => {
       return key.length >= 20;
     case AIProviderType.Anthropic:
       return key.startsWith('sk-ant-') || key.length >= 100;
+    case AIProviderType.Jev:
     case AIProviderType.Custom:
       return key.length >= 10;
     default:
@@ -347,4 +363,14 @@ export const initializeAISettings = (): { providers: AIProvider[]; agents: AIAge
   const providers = initializeDefaultProviders();
   const agents = initializeDefaultAgents(providers);
   return { providers, agents };
+};
+
+// API key for a provider type: a configured provider's key wins, then the build-time env key.
+export const getApiKeyForType = (type: AIProviderType): string => {
+  const configured = getProviders().find(p => p.type === type && p.apiKey)?.apiKey;
+  if (configured) return configured;
+  const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env ?? {};
+  if (type === AIProviderType.Gemini) return env.VITE_GEMINI_API_KEY || '';
+  if (type === AIProviderType.Jev) return env.VITE_JEV_API_KEY || '';
+  return '';
 };

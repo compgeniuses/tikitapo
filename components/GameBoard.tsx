@@ -22,71 +22,101 @@ const Cell: React.FC<{
   disabled: boolean;
   onClick: () => void;
   theme: Theme;
-}> = ({ cell, isWinner, disabled, onClick, theme }) => {
-    const [isRendered, setIsRendered] = React.useState(false);
+  rowIndex: number;
+  colIndex: number;
+}> = ({ cell, isWinner, disabled, onClick, theme, rowIndex, colIndex }) => {
+  const [isRendered, setIsRendered] = React.useState(false);
 
-    React.useEffect(() => {
-        if(cell !== CellState.Empty) {
-            setIsRendered(true);
-        } else {
-            setIsRendered(false);
-        }
-    }, [cell]);
+  React.useEffect(() => {
+    if (cell !== CellState.Empty) {
+      setIsRendered(true);
+    } else {
+      setIsRendered(false);
+    }
+  }, [cell]);
 
-    const cellContent = (() => {
-        switch (cell) {
-            case CellState.X: return <MemoizedIconX className={theme.playerXColor} />;
-            case CellState.O: return <MemoizedIconO className={theme.playerOColor} />;
-            case CellState.Obstacle: return <MemoizedIconObstacle className={theme.obstacleColor} />;
-            default: return null;
+  const cellContent = (() => {
+    switch (cell) {
+      case CellState.X:
+        return <MemoizedIconX className={theme.playerXColor} />;
+      case CellState.O:
+        return <MemoizedIconO className={theme.playerOColor} />;
+      case CellState.Obstacle:
+        return <MemoizedIconObstacle className={theme.obstacleColor} />;
+      default:
+        return null;
+    }
+  })();
+
+  return (
+    <div
+      role="button"
+      tabIndex={disabled ? -1 : 0}
+      aria-label={`Cell ${rowIndex + 1}, ${colIndex + 1}: ${cell === CellState.Empty ? 'empty' : cell === CellState.X ? 'player X' : cell === CellState.O ? 'player O' : 'obstacle'}${isWinner ? ', winning cell' : ''}`}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          if (!disabled && cell === CellState.Empty) {
+            onClick();
+          }
         }
-    })();
-    
-    return (
-        <div
-            onClick={onClick}
-            className={`flex items-center justify-center rounded-md aspect-square transition-all duration-300
+      }}
+      className={`flex items-center justify-center rounded-md aspect-square transition-all duration-300
                 ${cell === CellState.Empty && !disabled ? `${theme.cellBg} ${theme.cellHoverEffect} cursor-pointer` : `${theme.cellBg}/50`}
                 ${disabled && cell === CellState.Empty ? 'cursor-not-allowed' : ''}
                 ${isWinner ? `${theme.winningCellBg} ${theme.winningCellBoxShadow}` : ''}
+                focus:outline-none focus:ring-2 focus:ring-purple-500
             `}
-        >
-            <div className={`transition-transform duration-300 ease-out ${isRendered ? 'scale-100' : 'scale-0'}`}>
-                {cellContent}
-            </div>
-        </div>
-    );
+    >
+      <div
+        className={`transition-transform duration-300 ease-out ${isRendered ? 'scale-100' : 'scale-0'}`}
+      >
+        {cellContent}
+      </div>
+    </div>
+  );
 };
 
-export const GameBoard: React.FC<GameBoardProps> = ({ board, onCellClick, winningLine, disabled, theme }) => {
+export const GameBoard: React.FC<GameBoardProps> = ({
+  board,
+  onCellClick,
+  winningLine,
+  disabled,
+  theme,
+}) => {
   const boardSize = board.length;
 
   const isWinningCell = (row: number, col: number) => {
-    return winningLine.some(move => move.row === row && move.col === col);
+    return winningLine.some((move) => move.row === row && move.col === col);
   };
 
   return (
-    <div 
-        className={`${theme.boardBg} p-2 sm:p-4 rounded-lg transition-shadow duration-500 ${theme.boardBoxShadow}`}
-        style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(${boardSize}, minmax(0, 1fr))`,
-            gridTemplateRows: `repeat(${boardSize}, minmax(0, 1fr))`,
-            gap: '0.5rem',
-            aspectRatio: '1 / 1',
-            width: 'clamp(300px, 90vw, 600px)',
-        }}
+    <div
+      role="grid"
+      aria-label={`Connect-${boardSize} game board, size ${boardSize} by ${boardSize}`}
+      className={`${theme.boardBg} p-2 sm:p-4 rounded-lg transition-shadow duration-500 ${theme.boardBoxShadow}`}
+      style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${boardSize}, minmax(0, 1fr))`,
+        gridTemplateRows: `repeat(${boardSize}, minmax(0, 1fr))`,
+        gap: '0.5rem',
+        aspectRatio: '1 / 1',
+        width: 'clamp(300px, 90vw, 600px)',
+      }}
     >
       {board.map((row, rowIndex) =>
         row.map((cell, colIndex) => (
-            <Cell
-                key={`${rowIndex}-${colIndex}`}
-                cell={cell}
-                isWinner={isWinningCell(rowIndex, colIndex)}
-                disabled={disabled}
-                onClick={() => onCellClick(rowIndex, colIndex)}
-                theme={theme}
-            />
+          <Cell
+            key={`${rowIndex}-${colIndex}`}
+            cell={cell}
+            isWinner={isWinningCell(rowIndex, colIndex)}
+            disabled={disabled}
+            onClick={() => onCellClick(rowIndex, colIndex)}
+            theme={theme}
+            rowIndex={rowIndex}
+            colIndex={colIndex}
+          />
         ))
       )}
     </div>

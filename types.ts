@@ -26,6 +26,7 @@ export enum GameState {
   Achievements = 'achievements',
   OnlineLobby = 'onlineLobby',
   AvatarCreation = 'avatarCreation',
+  Leaderboard = 'leaderboard',
 }
 
 export enum GameMode {
@@ -107,9 +108,14 @@ export interface Settings {
   aiAgents: AIAgent[];
   activeAgentId: string | null;
   imageProviderId: string | null;
+  soundEnabled: boolean;
+  soundVolume: number;
+  animationsEnabled: boolean;
+  reducedMotion: boolean;
 }
 
 export enum AIProviderType {
+  Jev = 'jev',
   OpenAI = 'openai',
   Gemini = 'gemini',
   Anthropic = 'anthropic',
@@ -155,6 +161,6 @@ export interface Lobby {
 export interface OnlineGameData {
   board: Board;
   level: Level;
-  players: { [id: string]: { name: string, piece: Player, avatarUrl: string } };
+  players: { [id: string]: { name: string; piece: Player; avatarUrl: string } };
   currentPlayerId: string;
 }

@@ -61,7 +61,7 @@ const IconEyeOff: React.FC<{ className?: string }> = ({ className = '' }) => (
 
 const IconBot: React.FC<{ className?: string }> = ({ className = '' }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect IconX="3" y="11" width="18" height="10" rx="2"></rect>
+    <rect x="3" y="11" width="18" height="10" rx="2"></rect>
     <circle cx="12" cy="5" r="2"></circle>
     <path d="M12 7v4"></path>
     <line x1="8" y1="16" x2="8" y2="16"></line>
@@ -77,7 +77,7 @@ const IconKey: React.FC<{ className?: string }> = ({ className = '' }) => (
 
 const IconImage: React.FC<{ className?: string }> = ({ className = '' }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect IconX="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
     <circle cx="8.5" cy="8.5" r="1.5"></circle>
     <polyline points="21 15 16 10 5 21"></polyline>
   </svg>
@@ -274,7 +274,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
             { id: 'active', label: 'Active Selection', icon: IconCheck },
           ].map((tab) => (
             <button
-              IconKey={tab.id}
+              key={tab.id}
               onClick={() => setActiveTab(tab.id as TabType)}
               className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors ${
                 activeTab === tab.id
@@ -332,23 +332,23 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
                         className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
                       >
                         {Object.values(AIProviderType).map((type) => (
-                          <option IconKey={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
+                          <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
                         ))}
                       </select>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">API IconKey</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">API Key</label>
                     <input
                       type="password"
                       value={newProvider.apiKey}
                       onChange={(e) => setNewProvider({ ...newProvider, apiKey: e.target.value })}
-                      placeholder="Enter your API IconKey"
+                      placeholder="Enter your API Key"
                       className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      Your API IconKey is stored locally in your browser.
+                      Your API Key is stored locally in your browser.
                     </p>
                   </div>
 
@@ -385,7 +385,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
 
               <div className="space-y-2">
                 {providers.map((provider) => (
-                  <div IconKey={provider.id} className="bg-gray-800 rounded-lg p-4">
+                  <div key={provider.id} className="bg-gray-800 rounded-lg p-4">
                     {editingProvider?.id === provider.id ? (
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
@@ -400,7 +400,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
                               type={showApiKey[provider.id] ? 'text' : 'password'}
                               value={editingProvider.apiKey}
                               onChange={(e) => setEditingProvider({ ...editingProvider, apiKey: e.target.value })}
-                              placeholder="API IconKey"
+                              placeholder="API Key"
                               className="flex-1 p-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
                             />
                             <button
@@ -490,7 +490,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
                 <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-4 text-yellow-200">
                   <div className="flex items-center gap-2">
                     <IconAlert className="w-5 h-5" />
-                    <span>Please configure an API provider with a valid API IconKey first.</span>
+                    <span>Please configure an API provider with a valid API Key first.</span>
                   </div>
                 </div>
               )}
@@ -527,7 +527,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
                         {providers
                           .filter(p => p.apiKey)
                           .map((provider) => (
-                            <option IconKey={provider.id} value={provider.id}>
+                            <option key={provider.id} value={provider.id}>
                               {provider.name}
                             </option>
                           ))}
@@ -549,7 +549,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
                           providers
                             .find((p) => p.id === newAgent.providerId)
                             ?.models.map((model) => (
-                              <option IconKey={model} value={model}>
+                              <option key={model} value={model}>
                                 {model}
                               </option>
                             ))}
@@ -563,7 +563,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
                         className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
                       >
                         {Object.values(Difficulty).map((diff) => (
-                          <option IconKey={diff} value={diff}>{diff}</option>
+                          <option key={diff} value={diff}>{diff}</option>
                         ))}
                       </select>
                     </div>
@@ -623,7 +623,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
                 {agents
                   .filter((agent) => !agent.isImageGeneration)
                   .map((agent) => (
-                    <div IconKey={agent.id} className="bg-gray-800 rounded-lg p-4">
+                    <div key={agent.id} className="bg-gray-800 rounded-lg p-4">
                       {editingAgent?.id === agent.id ? (
                         <div className="space-y-4">
                           <div className="grid grid-cols-2 gap-4">
@@ -639,7 +639,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
                               className="p-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
                             >
                               {Object.values(Difficulty).map((diff) => (
-                                <option IconKey={diff} value={diff}>{diff}</option>
+                                <option key={diff} value={diff}>{diff}</option>
                               ))}
                             </select>
                           </div>
@@ -738,7 +738,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
 
                       return (
                         <button
-                          IconKey={agent.id}
+                          key={agent.id}
                           onClick={() => hasApiKey && handleSetActiveAgent(agent.id)}
                           disabled={!hasApiKey}
                           className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
@@ -766,7 +766,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
                               </div>
                             </div>
                             {!hasApiKey && (
-                              <span className="text-xs text-red-400">No API IconKey</span>
+                              <span className="text-xs text-red-400">No API Key</span>
                             )}
                           </div>
                         </button>
@@ -801,7 +801,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
 
                       return (
                         <button
-                          IconKey={provider.id}
+                          key={provider.id}
                           onClick={() => handleSetImageProvider(provider.id)}
                           className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
                             isActive
@@ -833,7 +833,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
                       <IconImage className="w-12 h-12 mx-auto mb-3 opacity-50" />
                       <p>No image generation providers configured.</p>
                       <p className="text-sm mt-2">
-                        Add a Google Gemini provider with a valid API IconKey.
+                        Add a Google Gemini provider with a valid API Key.
                       </p>
                     </div>
                   )}

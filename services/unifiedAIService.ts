@@ -1,5 +1,6 @@
 import { AIProvider, AIAgent, AIProviderType, Board, Difficulty, CellState, Move, Profile } from '../types';
 import * as aiProviderService from './aiProviderService';
+import * as jevService from './jevService';
 
 // Unified AI Service that works with multiple providers
 export class UnifiedAIService {
@@ -47,6 +48,8 @@ export class UnifiedAIService {
     const model = this.agent?.model || this.provider.models[0];
 
     switch (this.provider.type) {
+      case AIProviderType.Jev:
+        throw new Error('Jev is a decision model and does not generate free text');
       case AIProviderType.OpenAI:
         return this.callOpenAI(messages, model);
       case AIProviderType.Gemini:
@@ -198,6 +201,11 @@ export class UnifiedAIService {
   async getAIComment(board: Board, difficulty: Difficulty, lastMove: Move): Promise<string> {
     if (!this.isReady()) {
       return '...';
+    }
+
+    // Jev picks a tone for a phrase bank instead of generating text.
+    if (this.provider?.type === AIProviderType.Jev) {
+      return jevService.getAIPersonalityComment(board, difficulty, lastMove);
     }
 
     const systemPrompt = this.agent?.systemPrompt || 'You are an AI opponent in a Connect-N game.';

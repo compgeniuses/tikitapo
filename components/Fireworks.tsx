@@ -57,7 +57,7 @@ const FireworkBurst: React.FC<{ x: string, y: string, delay: number }> = ({ x, y
 };
 
 export const Fireworks: React.FC = () => {
-    const [bursts, setBursts] = useState<JSX.Element[]>([]);
+    const [bursts, setBursts] = useState<React.ReactElement[]>([]);
 
     useEffect(() => {
         const createBursts = () => {

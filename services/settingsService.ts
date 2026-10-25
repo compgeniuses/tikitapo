@@ -12,6 +12,14 @@ const defaultSettings: Settings = {
   lastPlayedMode: GameMode.Offline,
   lastPlayedDifficulty: Difficulty.Simple,
   avatarUrl: '',
+  aiProviders: [],
+  aiAgents: [],
+  activeAgentId: null,
+  imageProviderId: null,
+  soundEnabled: true,
+  soundVolume: 0.7,
+  animationsEnabled: true,
+  reducedMotion: false,
 };
 
 export const getSettings = (): Settings => {

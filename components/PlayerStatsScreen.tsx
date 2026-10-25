@@ -52,7 +52,7 @@ export const PlayerStatsScreen: React.FC<PlayerStatsScreenProps> = ({ onBack, th
 
         {/* VS AI Stats */}
         <div>
-            <h2 className="text-2xl font-orbitron font-bold mb-3">vs AI (Gemini)</h2>
+            <h2 className="text-2xl font-orbitron font-bold mb-3">vs AI (Jev)</h2>
             <div className="grid md:grid-cols-3 gap-4">
                 <StatCard title="Simple" stats={stats[GameMode.AI][Difficulty.Simple]} theme={theme} />
                 <StatCard title="Hard" stats={stats[GameMode.AI][Difficulty.Hard]} theme={theme} />
